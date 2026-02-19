@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OverviewTab from './components/OverviewTab';
-import ServicesManager from './components/ServicesManager';
+// import ServicesManager from './components/ServicesManager';
 import BlogsManager from './components/BlogsManager';
 import MessagesManager from './components/MessagesManager';
 // import GalleryManager from './components/GalleryManager';
@@ -71,7 +71,7 @@ export default function AdminPage() {
             <nav className="flex overflow-x-auto">
               {[
                 { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line' },
-                { id: 'services', label: 'Services', icon: 'ri-service-line' },
+                // { id: 'services', label: 'Services', icon: 'ri-service-line' },
                 { id: 'products', label: 'Products', icon: 'ri-shopping-bag-line' },
                 // { id: 'gallery', label: 'Gallery', icon: 'ri-gallery-line' },
                 { id: 'blogs', label: 'Blogs', icon: 'ri-article-line' },
@@ -99,7 +99,7 @@ export default function AdminPage() {
           {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'overview' && <OverviewTab />}
-            {activeTab === 'services' && <ServicesManager />}
+            {/* {activeTab === 'services' && <ServicesManager />} */}
             {activeTab === 'products' && <ProductsManager />}
             {/* {activeTab === 'gallery' && <GalleryManager />} */}
             {activeTab === 'blogs' && <BlogsManager />}
