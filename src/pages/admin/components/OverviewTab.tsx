@@ -5,7 +5,7 @@ const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
 
 interface Stats {
-  services: number;
+  // services: number;
   products: number;
   blogs: number;
   // testimonials: number;
@@ -18,7 +18,7 @@ interface Stats {
 
 export default function OverviewTab() {
   const [stats, setStats] = useState<Stats>({
-    services: 0,
+    // services: 0,
     products: 0,
     blogs: 0,
     // testimonials: 0,
@@ -43,7 +43,7 @@ export default function OverviewTab() {
       
       // Fetch all data in parallel
       const [
-        servicesRes,
+        // servicesRes,
         productsRes,
         blogsRes,
         // testimonialsRes,
@@ -52,18 +52,12 @@ export default function OverviewTab() {
         productInquiriesRes,
         // galleryRes,
       ] = await Promise.all([
-        fetch(`${SUPABASE_URL}/functions/v1/services-api`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
-        }),
         fetch(`${SUPABASE_URL}/functions/v1/products-api`, {
           headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
         }),
         fetch(`${SUPABASE_URL}/functions/v1/blogs-api`, {
           headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
         }),
-        // fetch(`${SUPABASE_URL}/functions/v1/testimonials-api`, {
-        //   headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
-        // }),
         fetch(`${SUPABASE_URL}/functions/v1/contact-api`, {
           headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
         }),
@@ -73,13 +67,10 @@ export default function OverviewTab() {
         fetch(`${SUPABASE_URL}/functions/v1/product-inquiries-api`, {
           headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
         }),
-        // fetch(`${SUPABASE_URL}/functions/v1/gallery-api`, {
-        //   headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
-        // }),
       ]);
 
       const [
-        services,
+        // services,
         products,
         blogs,
         // testimonials,
@@ -88,7 +79,7 @@ export default function OverviewTab() {
         productInquiries,
         // gallery,
       ] = await Promise.all([
-        servicesRes.ok ? servicesRes.json() : [],
+        // servicesRes.ok ? servicesRes.json() : [],
         productsRes.ok ? productsRes.json() : [],
         blogsRes.ok ? blogsRes.json() : [],
         // testimonialsRes.ok ? testimonialsRes.json() : [],
@@ -99,7 +90,7 @@ export default function OverviewTab() {
       ]);
 
       setStats({
-        services: services.length || 0,
+        // services: services.length || 0,
         products: products.length || 0,
         blogs: blogs.length || 0,
         // testimonials: testimonials.length || 0,
@@ -116,7 +107,7 @@ export default function OverviewTab() {
   };
 
   const statCards = [
-    { label: 'Services', value: stats.services, icon: 'ri-service-line', color: 'from-blue-500 to-blue-600' },
+    // { label: 'Services', value: stats.services, icon: 'ri-service-line', color: 'from-blue-500 to-blue-600' },
     { label: 'Products', value: stats.products, icon: 'ri-shopping-bag-line', color: 'from-yellow-500 to-yellow-600' },
     { label: 'Blog Posts', value: stats.blogs, icon: 'ri-article-line', color: 'from-purple-500 to-purple-600' },
     // { label: 'Testimonials', value: stats.testimonials, icon: 'ri-chat-quote-line', color: 'from-green-500 to-green-600' },
@@ -126,29 +117,6 @@ export default function OverviewTab() {
     // { label: 'Gallery Images', value: stats.galleryImages, icon: 'ri-gallery-line', color: 'from-pink-500 to-pink-600' },
   ];
 
-  const testimonials = [
-    {
-      name: 'Ismail Yunus',
-      role: 'Business Owner',
-      image: '',
-      text: 'Miftah Edu-Trade Hub made our import process incredibly smooth. Their expertise in international trade is unmatched.',
-      rating: 5
-    },
-    {
-      name: 'Fatima Sulaiman',
-      role: 'Student',
-      image: '',
-      text: 'Thanks to their scholarship guidance, I am now studying at my dream university in Canada. Highly recommended!',
-      rating: 5
-    },
-    {
-      name: 'Abdulkarim Hassan',
-      role: 'Entrepreneur',
-      image: '',
-      text: 'Their sourcing services helped us find quality suppliers at competitive prices. Excellent service and support.',
-      rating: 5
-    }
-  ];
 
   if (loading) {
     return (

@@ -1,22 +1,9 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import Header from '../../components/feature/Header';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import { useSEO, generateWebPageSchema } from '../../utils/seo';
-
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
-
-interface Service {
-  id: number;
-  title: string;
-  description: string;
-  icon: string;
-  image: string;
-  features: string[];
-  category: string;
-}
+// import BackToTop from '../../components/BackToTop';
 
 export default function ServicesPage() {
   // SEO
@@ -32,31 +19,56 @@ export default function ServicesPage() {
     )
   });
 
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
-    try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/services-api`, {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setServices(data);
-      }
-    } catch (error) {
-      console.error('Error fetching services:', error);
-    } finally {
-      setLoading(false);
+  const services = [
+    {
+      id: 'import-export',
+      title: 'Import & Export Solutions',
+      description: 'Comprehensive trade solutions connecting global markets with seamless import and export services.',
+      icon: 'ri-ship-line',
+      image: 'https://readdy.ai/api/search-image?query=Modern%20international%20shipping%20containers%20at%20a%20busy%20port%20with%20cargo%20ships%20and%20cranes%20under%20clear%20blue%20sky%2C%20professional%20commercial%20photography%20style%2C%20clean%20organized%20logistics%20environment%20with%20global%20trade%20atmosphere%2C%20bright%20natural%20lighting%20highlighting%20efficiency%20and%20scale%20of%20operations&width=600&height=400&seq=import-export&orientation=landscape',
+      features: ['Complete documentation and customs clearance', 'Global logistics coordination', 'Compliance and regulatory support', 'Quality inspection services']
+    },
+    {
+      id: 'education',
+      title: 'Global Education & Scholarships',
+      description: 'Expert guidance for international education opportunities and scholarship applications worldwide.',
+      icon: 'ri-graduation-cap-line',
+      image: 'https://readdy.ai/api/search-image?query=Diverse%20international%20students%20studying%20together%20in%20modern%20university%20campus%20library%20with%20laptops%20and%20books%2C%20bright%20academic%20environment%20with%20natural%20sunlight%2C%20collaborative%20learning%20atmosphere%20showing%20global%20education%20opportunities%2C%20professional%20educational%20photography%20with%20warm%20welcoming%20ambiance&width=600&height=400&seq=education&orientation=landscape',
+      features: ['University selection and application support', 'Scholarship search and application assistance', 'Document preparation and review', 'Visa application guidance']
+    },
+    {
+      id: 'currency-exchange',
+      title: 'Currency Exchange & Remittance',
+      description: 'Secure and competitive currency exchange with fast international money transfer services.',
+      icon: 'ri-exchange-dollar-line',
+      image: 'https://readdy.ai/api/search-image?query=Modern%20digital%20currency%20exchange%20interface%20showing%20international%20money%20transfer%20with%20multiple%20currency%20symbols%20and%20secure%20transaction%20icons%2C%20professional%20fintech%20atmosphere%20with%20blue%20and%20gold%20accents%2C%20clean%20minimalist%20design%20representing%20global%20financial%20connectivity%20and%20trust&width=600&height=400&seq=currency&orientation=landscape',
+      features: ['Competitive exchange rates', 'Low transaction fees', 'Multiple transfer methods', 'Real-time rate updates']
+    },
+    {
+      id: 'sourcing',
+      title: 'Goods & Services Sourcing',
+      description: 'Professional sourcing services connecting you with quality suppliers and manufacturers globally.',
+      icon: 'ri-shopping-bag-line',
+      image: 'https://readdy.ai/api/search-image?query=Professional%20business%20sourcing%20meeting%20with%20product%20samples%20and%20quality%20inspection%20in%20modern%20warehouse%20facility%2C%20international%20trade%20atmosphere%20with%20diverse%20products%20displayed%2C%20bright%20industrial%20lighting%20showing%20organized%20inventory%20and%20professional%20procurement%20process&width=600&height=400&seq=sourcing&orientation=landscape',
+      features: ['Supplier identification and verification', 'Quality inspection and testing', 'Price negotiation support', 'Sample procurement']
+    },
+    {
+      id: 'travel',
+      title: 'Flights & Hotel Bookings',
+      description: 'Convenient travel booking services for flights, hotels, and complete travel packages worldwide.',
+      icon: 'ri-flight-takeoff-line',
+      image: 'https://readdy.ai/api/search-image?query=Luxury%20hotel%20resort%20with%20modern%20architecture%20and%20airplane%20in%20clear%20blue%20sky%2C%20tropical%20vacation%20destination%20with%20palm%20trees%20and%20pristine%20beach%2C%20professional%20travel%20photography%20showing%20premium%20hospitality%20and%20comfortable%20journey%20experience%2C%20bright%20sunny%20atmosphere%20with%20inviting%20ambiance&width=600&height=400&seq=travel&orientation=landscape',
+      features: ['Flight booking for all airlines', 'Hotel reservations worldwide', 'Travel package customization', 'Visa assistance']
+    },
+    {
+      id: 'visa',
+      title: 'Visa Processing & Travel Advisory',
+      description: 'Expert visa processing assistance and comprehensive travel advisory for hassle-free international travel.',
+      icon: 'ri-passport-line',
+      image: 'https://readdy.ai/api/search-image?query=Professional%20visa%20application%20consultation%20desk%20with%20passport%20documents%20and%20world%20map%2C%20modern%20immigration%20office%20setting%20with%20organized%20paperwork%20and%20digital%20screens%2C%20trustworthy%20advisory%20atmosphere%20with%20international%20flags%2C%20bright%20professional%20lighting%20showing%20efficient%20visa%20processing%20service&width=600&height=400&seq=visa&orientation=landscape',
+      features: ['Tourist visa processing', 'Business visa assistance', 'Student visa support', 'Work permit applications']
     }
-  };
+  ];
 
   const benefits = [
     {
@@ -85,6 +97,7 @@ export default function ServicesPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <WhatsAppButton />
+      {/* <BackToTop /> */}
 
       <section className="relative h-96 flex items-center justify-center overflow-hidden">
         <div 
@@ -106,67 +119,54 @@ export default function ServicesPage() {
 
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="text-center py-20">
-              <i className="ri-loader-4-line animate-spin text-6xl text-blue-900"></i>
-            </div>
-          ) : services.length > 0 ? (
-            services.map((service, index) => (
-              <div
-                key={service.id}
-                className={`mb-20 last:mb-0 ${
-                  index % 2 === 0 ? '' : 'lg:flex-row-reverse'
-                } flex flex-col lg:flex-row gap-12 items-center`}
-              >
-                <div className="lg:w-1/2">
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-yellow-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all"></div>
-                    <img
-                      src={service.image}
-                      alt={service.title}
-                      className="relative rounded-3xl shadow-2xl w-full h-80 object-cover object-top"
-                    />
-                  </div>
-                </div>
-
-                <div className="lg:w-1/2">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-900 to-blue-700 rounded-2xl flex items-center justify-center mb-6">
-                    <i className={`${service.icon} text-3xl text-yellow-400`}></i>
-                  </div>
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                    {service.title}
-                  </h2>
-                  <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                    {service.description}
-                  </p>
-                  {service.features && service.features.length > 0 && (
-                    <ul className="space-y-3 mb-8">
-                      {service.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <i className="ri-check-line text-blue-900 text-sm"></i>
-                          </div>
-                          <span className="text-gray-700">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <Link
-                    to={`/service-detail/${service.id}`}
-                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
-                  >
-                    Get Started
-                    <i className="ri-arrow-right-line ml-2"></i>
-                  </Link>
+          {services.map((service, index) => (
+            <div
+              key={service.id}
+              className={`mb-20 last:mb-0 ${
+                index % 2 === 0 ? '' : 'lg:flex-row-reverse'
+              } flex flex-col lg:flex-row gap-12 items-center`}
+            >
+              <div className="lg:w-1/2">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 to-yellow-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all"></div>
+                  <img
+                    src={service.image}
+                    alt={service.title}
+                    className="relative rounded-3xl shadow-2xl w-full h-80 object-cover object-top"
+                  />
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-20">
-              <i className="ri-service-line text-6xl text-gray-300 mb-4"></i>
-              <p className="text-xl text-gray-500">No services available at the moment.</p>
+
+              <div className="lg:w-1/2">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-900 to-blue-700 rounded-2xl flex items-center justify-center mb-6">
+                  <i className={`${service.icon} text-3xl text-yellow-400`}></i>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                  {service.title}
+                </h2>
+                <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                  {service.description}
+                </p>
+                <ul className="space-y-3 mb-8">
+                  {service.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <i className="ri-check-line text-blue-900 text-sm"></i>
+                      </div>
+                      <span className="text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to={`/services/${service.id}`}
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
+                >
+                  Get Started
+                  <i className="ri-arrow-right-line ml-2"></i>
+                </Link>
+              </div>
             </div>
-          )}
+          ))}
         </div>
       </section>
 

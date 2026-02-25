@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getAccessToken } from '../../../utils/auth';
 
 interface Message {
   id: string;
@@ -12,8 +11,7 @@ interface Message {
   created_at: string;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function MessagesManager() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -21,30 +19,32 @@ export default function MessagesManager() {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read' | 'replied'>('all');
 
+  const updateMessageInState = (id: string, patch: Partial<Message>) => {
+    setMessages((prev) => prev.map((msg) => (msg.id === id ? { ...msg, ...patch } : msg)));
+    setSelectedMessage((prev) => (prev && prev.id === id ? { ...prev, ...patch } : prev));
+  };
+
   useEffect(() => {
     fetchMessages();
   }, []);
 
   const fetchMessages = async () => {
     try {
-      const token = getAccessToken();
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/contact-api`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
-      });
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/message`);
       
       const data = await response.json();
       
       if (!response.ok) {
         console.error('API Error:', data);
-        throw new Error(data.error || 'Failed to fetch messages');
+        throw new Error(data.error || data.message || 'Failed to fetch messages');
       }
       
       // Ensure data is always an array
-      setMessages(Array.isArray(data) ? data : []);
+      const rows = Array.isArray(data) ? data : [];
+      setMessages(rows.map((row) => ({
+        ...row,
+        status: (row.status || 'unread') as 'unread' | 'read' | 'replied',
+      })));
     } catch (error) {
       console.error('Error fetching messages:', error);
       alert(`Error loading messages: ${error.message}`);
@@ -57,12 +57,9 @@ export default function MessagesManager() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      const token = getAccessToken();
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/contact-api?id=${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/message/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'apikey': SUPABASE_ANON_KEY,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status: newStatus }),
@@ -70,32 +67,34 @@ export default function MessagesManager() {
       
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to update message');
+        throw new Error(data.error || data.message || 'Failed to update message');
       }
-      
-      fetchMessages();
+
+      updateMessageInState(id, { status: newStatus as Message['status'] });
     } catch (error) {
       console.error('Error updating message status:', error);
       alert(`Error updating message: ${error.message}`);
     }
   };
 
+  const handleReply = async (message: Message) => {
+    const subject = `Re: ${message.subject}`;
+    const body = `Hello ${message.name},\n\nThank you for contacting us.\n\nBest regards,\nMiftah Edu-Trade Hub`;
+    window.location.href = `mailto:${encodeURIComponent(message.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    await handleStatusChange(message.id, 'replied');
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this message?')) return;
     
     try {
-      const token = getAccessToken();
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/contact-api?id=${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/message/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'apikey': SUPABASE_ANON_KEY,
-        },
       });
       
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to delete message');
+        throw new Error(data.error || data.message || 'Failed to delete message');
       }
       
       setSelectedMessage(null);
@@ -223,14 +222,14 @@ export default function MessagesManager() {
                   Mark as Read
                 </button>
                 <button
-                  onClick={() => handleStatusChange(selectedMessage.id, 'replied')}
+                  onClick={() => handleReply(selectedMessage)}
                   className={`px-4 py-2 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                     selectedMessage.status === 'replied'
                       ? 'bg-green-100 text-green-900'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  Mark as Replied
+                  Reply
                 </button>
               </div>
               <button

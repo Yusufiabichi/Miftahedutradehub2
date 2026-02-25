@@ -1,16 +1,16 @@
 
 import { useState, useEffect } from 'react';
 
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 interface ServiceInquiry {
-  id: string;
-  service_id: string;
+  id: number;
   service_name: string;
   name: string;
   email: string;
   phone: string;
+  budget_range?: string;
+  expected_timeline?: string;
   message: string;
   created_at: string;
 }
@@ -28,16 +28,11 @@ export default function ServiceInquiriesManager() {
   const fetchInquiries = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/service-inquiries-api`, {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/service`);
 
       if (response.ok) {
         const data = await response.json();
-        setInquiries(data);
+        setInquiries(Array.isArray(data) ? data : []);
       } else {
         console.error('Failed to fetch inquiries:', response.statusText);
       }
@@ -48,16 +43,12 @@ export default function ServiceInquiriesManager() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this inquiry?')) return;
 
     try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/service-inquiries-api/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/service/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
       });
 
       if (response.ok) {
@@ -240,6 +231,21 @@ export default function ServiceInquiriesManager() {
                   <p className="text-gray-900 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
                     {selectedInquiry.message}
                   </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Budget Range
+                    </label>
+                    <p className="text-gray-900">{selectedInquiry.budget_range || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Expected Timeline
+                    </label>
+                    <p className="text-gray-900">{selectedInquiry.expected_timeline || 'N/A'}</p>
+                  </div>
                 </div>
               </div>
 

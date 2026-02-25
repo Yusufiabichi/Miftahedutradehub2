@@ -11,7 +11,7 @@ const BlogDetail = lazy(() => import('../pages/blog-detail/page'));
 const Admin = lazy(() => import('../pages/admin/page'));
 const Login = lazy(() => import('../pages/login/page'));
 const Contact = lazy(() => import('../pages/contact/page'));
-const Testimonials = lazy(() => import('../pages/testimonials/page'));
+// const Testimonials = lazy(() => import('../pages/testimonials/page'));
 const FAQs = lazy(() => import('../pages/faqs/page'));
 const Products = lazy(() => import('../pages/products/page'));
 const ProductDetail = lazy(() => import('../pages/product-detail/page'));
@@ -58,10 +58,10 @@ const routes: RouteObject[] = [
     path: '/contact',
     element: <Contact />,
   },
-  {
-    path: '/testimonials',
-    element: <Testimonials />,
-  },
+  // {
+  //   path: '/testimonials',
+  //   element: <Testimonials />,
+  // },
   {
     path: '/faqs',
     element: <FAQs />,

@@ -1,86 +1,132 @@
-import { useParams, Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import Header from '../../components/feature/Header';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
+import BackToTop from '../../components/BackToTop';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 interface BlogPost {
-  id: string;
+  id: number | string;
   title: string;
   excerpt: string;
   content: string;
   image: string;
   category: string;
+  author?: string;
+  read_time?: number | string | null;
   created_at: string;
-  author: string;
-  author_image: string;
+  status?: 'Draft' | 'Published' | 'Archived';
 }
 
 export default function BlogDetailPage() {
   const { id } = useParams();
   const [blog, setBlog] = useState<BlogPost | null>(null);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [imageError, setImageError] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
-  const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-  
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetchBlogPost();
   }, [id]);
 
-  const fetchBlogPost = async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/blogs-api/${id}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch blog post');
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) {
+        setNotFound(true);
+        setLoading(false);
+        return;
       }
 
-      const data = await response.json();
-      
-      if (data && data.id) {
-        setBlog(data);
-        
-        const allPostsResponse = await fetch(`${SUPABASE_URL}/functions/v1/blogs-api`);
-        
-        if (allPostsResponse.ok) {
-          const allPosts = await allPostsResponse.json();
-          
-          const sameCategoryPosts = allPosts.filter(
-            (post: BlogPost) => post.id !== id && post.category === data.category
-          );
-          
-          const otherPosts = allPosts.filter(
-            (post: BlogPost) => post.id !== id && post.category !== data.category
-          );
-          
-          const related = [...sameCategoryPosts, ...otherPosts].slice(0, 2);
-          setRelatedPosts(related);
+      try {
+        setLoading(true);
+        setNotFound(false);
+
+        const [blogResponse, listResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/blogs/${id}`),
+          fetch(`${API_BASE_URL}/api/blogs`),
+        ]);
+
+        if (blogResponse.status === 404) {
+          setNotFound(true);
+          setBlog(null);
+        } else if (!blogResponse.ok) {
+          throw new Error('Failed to fetch blog');
+        } else {
+          const blogData = await blogResponse.json();
+          setBlog({
+            id: blogData.id,
+            title: blogData.title || '',
+            excerpt: blogData.excerpt || '',
+            content: blogData.content || '',
+            image: blogData.image || '',
+            category: blogData.category || 'General',
+            author: blogData.author || 'Miftah Team',
+            read_time: blogData.read_time ?? null,
+            created_at: blogData.created_at || new Date().toISOString(),
+            status: blogData.status,
+          });
         }
-      } else {
-        setError('Blog post not found');
+
+        if (listResponse.ok) {
+          const listData = await listResponse.json();
+          const mapped = (Array.isArray(listData) ? listData : [])
+            .filter((item) => !item.status || item.status === 'Published')
+            .map((item) => ({
+              id: item.id,
+              title: item.title || '',
+              excerpt: item.excerpt || '',
+              content: item.content || '',
+              image: item.image || '',
+              category: item.category || 'General',
+              author: item.author || 'Miftah Team',
+              read_time: item.read_time ?? null,
+              created_at: item.created_at || new Date().toISOString(),
+              status: item.status,
+            }))
+            .sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            );
+          setAllPosts(mapped);
+        } else {
+          setAllPosts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching blog details:', error);
+        setNotFound(true);
+        setBlog(null);
+        setAllPosts([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching blog post:', err);
-      setError('Failed to load blog post');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchData();
+  }, [id]);
+
+  const relatedPosts = useMemo(() => {
+    if (!blog) return [];
+
+    const sameCategory = allPosts
+      .filter((post) => String(post.id) !== String(blog.id) && post.category === blog.category)
+      .slice(0, 2);
+
+    if (sameCategory.length === 2) return sameCategory;
+
+    const more = allPosts
+      .filter((post) => String(post.id) !== String(blog.id) && post.category !== blog.category)
+      .slice(0, 2 - sameCategory.length);
+
+    return [...sameCategory, ...more];
+  }, [allPosts, blog]);
 
   const handleShare = (platform: string) => {
     const url = window.location.href;
     const title = blog?.title || '';
-    
+
     let shareUrl = '';
-    
-    switch(platform) {
+    switch (platform) {
       case 'facebook':
         shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
         break;
@@ -91,25 +137,15 @@ export default function BlogDetailPage() {
         shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
         break;
       case 'whatsapp':
-        shareUrl = `https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}`;
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`;
+        break;
+      default:
         break;
     }
-    
+
     if (shareUrl) {
       window.open(shareUrl, '_blank', 'width=600,height=400');
     }
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
   };
 
   if (loading) {
@@ -118,8 +154,8 @@ export default function BlogDetailPage() {
         <Header />
         <div className="pt-32 pb-20 text-center">
           <div className="max-w-2xl mx-auto px-4">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-900 mx-auto mb-6"></div>
-            <p className="text-gray-600">Loading article...</p>
+            <i className="ri-loader-4-line text-6xl text-gray-400 mb-6 animate-spin"></i>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Loading Blog Post...</h1>
           </div>
         </div>
         <Footer />
@@ -127,7 +163,7 @@ export default function BlogDetailPage() {
     );
   }
 
-  if (error || !blog) {
+  if (notFound || !blog) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -135,7 +171,7 @@ export default function BlogDetailPage() {
           <div className="max-w-2xl mx-auto px-4">
             <i className="ri-file-search-line text-6xl text-gray-400 mb-6"></i>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Blog Post Not Found</h1>
-            <p className="text-gray-600 mb-8">The article you're looking for doesn't exist.</p>
+            <p className="text-gray-600 mb-8">The article you&apos;re looking for doesn&apos;t exist.</p>
             <Link
               to="/blog"
               className="inline-flex items-center px-6 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 transition-all whitespace-nowrap cursor-pointer"
@@ -154,8 +190,8 @@ export default function BlogDetailPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <WhatsAppButton />
+      <BackToTop />
 
-      {/* Hero Section */}
       <section className="pt-32 pb-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <Link
@@ -175,37 +211,34 @@ export default function BlogDetailPage() {
             </h1>
             <div className="flex flex-wrap items-center gap-4 text-gray-600">
               <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center text-white font-bold text-lg">
-                  {blog.author.charAt(0).toUpperCase()}
-                </div>
-                <span className="text-sm font-semibold">{blog.author}</span>
+                <i className="ri-user-line"></i>
+                <span className="text-sm">{blog.author || 'Miftah Team'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <i className="ri-calendar-line"></i>
-                <span className="text-sm">{formatDate(blog.created_at)}</span>
+                <span className="text-sm">
+                  {new Date(blog.created_at).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <i className="ri-time-line"></i>
+                <span className="text-sm">{blog.read_time ? `${blog.read_time} min read` : 'Quick read'}</span>
               </div>
             </div>
           </div>
 
-          <div className="relative rounded-3xl overflow-hidden mb-12 bg-gray-100">
-            {!imageError && blog.image ? (
-              <img
-                src={blog.image}
-                alt={blog.title}
-                className="w-full h-96 object-cover object-top"
-                onError={handleImageError}
-              />
-            ) : (
-              <div className="w-full h-96 flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50">
-                <div className="text-center">
-                  <i className="ri-image-line text-6xl text-blue-300 mb-4"></i>
-                  <p className="text-gray-500 text-sm">Image not available</p>
-                </div>
-              </div>
-            )}
+          <div className="relative rounded-3xl overflow-hidden mb-12">
+            <img
+              src={blog.image}
+              alt={blog.title}
+              className="w-full h-96 object-cover object-top"
+            />
           </div>
 
-          {/* Share Buttons */}
           <div className="mb-8">
             <p className="text-sm font-semibold text-gray-900 mb-3">Share this article:</p>
             <div className="flex space-x-3">
@@ -241,19 +274,11 @@ export default function BlogDetailPage() {
           </div>
 
           <article className="prose prose-lg max-w-none">
-            <div 
-              className="text-gray-700 leading-relaxed space-y-6"
-              dangerouslySetInnerHTML={{ __html: blog.content }}
-              style={{
-                fontSize: '1.125rem',
-                lineHeight: '1.75'
-              }}
-            />
+            <div className="text-gray-700 leading-relaxed whitespace-pre-line">{blog.content}</div>
           </article>
         </div>
       </section>
 
-      {/* Related Posts */}
       {relatedPosts.length > 0 && (
         <section className="py-16 bg-white border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -277,15 +302,21 @@ export default function BlogDetailPage() {
                     <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                       <span className="flex items-center">
                         <i className="ri-calendar-line mr-1"></i>
-                        {formatDate(post.created_at)}
+                        {new Date(post.created_at).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                      <span className="flex items-center">
+                        <i className="ri-time-line mr-1"></i>
+                        {post.read_time ? `${post.read_time} min read` : 'Quick read'}
                       </span>
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-900 transition-colors">
                       {post.title}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">
-                      {post.excerpt}
-                    </p>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{post.excerpt}</p>
                     <Link
                       to={`/blog/${post.id}`}
                       className="inline-flex items-center text-blue-900 font-semibold hover:text-yellow-600 transition-colors cursor-pointer whitespace-nowrap"
@@ -301,7 +332,6 @@ export default function BlogDetailPage() {
         </section>
       )}
 
-      {/* CTA Section */}
       <section className="py-16 bg-gradient-to-br from-blue-950 via-blue-900 to-blue-800 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">

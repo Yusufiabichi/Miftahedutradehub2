@@ -1,15 +1,16 @@
 import { useState } from 'react';
+import { servicesData } from '../../../mocks/servicesData';
 
 interface ServiceInquiryFormProps {
   serviceName: string;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function ServiceInquiryForm({ serviceName }: ServiceInquiryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const serviceOptions = Array.from(new Set(servicesData.map((service) => service.title)));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -18,21 +19,19 @@ export default function ServiceInquiryForm({ serviceName }: ServiceInquiryFormPr
 
     const formData = new FormData(e.currentTarget);
     const inquiryData = {
-      service_name: serviceName,
+      service_name: (formData.get('service_name') as string) || serviceName,
       name: formData.get('name') as string,
       email: formData.get('email') as string,
       phone: formData.get('phone') as string,
-      company: formData.get('company') as string,
       message: formData.get('message') as string,
       budget_range: formData.get('budget_range') as string,
       timeline: formData.get('timeline') as string,
     };
 
     try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/service-inquiries-api`, {
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/service`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(inquiryData),
@@ -43,6 +42,8 @@ export default function ServiceInquiryForm({ serviceName }: ServiceInquiryFormPr
         (e.target as HTMLFormElement).reset();
         setTimeout(() => setSubmitStatus('idle'), 5000);
       } else {
+        const errorData = await response.json().catch(() => null);
+        console.error('Service inquiry submission failed:', errorData?.message || response.statusText);
         setSubmitStatus('error');
       }
     } catch (error) {
@@ -102,53 +103,60 @@ export default function ServiceInquiryForm({ serviceName }: ServiceInquiryFormPr
           </div>
 
           <div>
-            <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-              Company Name
+            <label htmlFor="service_name" className="block text-sm font-medium text-gray-700 mb-2">
+              Service *
             </label>
-            <input
-              type="text"
-              id="company"
-              name="company"
+            <select
+              id="service_name"
+              name="service_name"
+              defaultValue={serviceName}
+              required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent text-sm"
-              placeholder="Your Company"
-            />
+            >
+              {!serviceOptions.includes(serviceName) && <option value={serviceName}>{serviceName}</option>}
+              {serviceOptions.map((service) => (
+                <option key={service} value={service}>
+                  {service}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="budget_range" className="block text-sm font-medium text-gray-700 mb-2">
-              Budget Range
+              Budget Range *
             </label>
             <select
               id="budget_range"
               name="budget_range"
+              required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent text-sm"
             >
               <option value="">Select budget range</option>
-              <option value="under-1000">Under ₦1,000</option>
-              <option value="1000-5000">₦1,000 - ₦5,000</option>
-              <option value="5000-10000">₦5,000 - ₦10,000</option>
-              <option value="10000-50000">₦10,000 - ₦50,000</option>
-              <option value="over-50000">Over ₦50,000</option>
+              <option value="Under 5000">Under 5000</option>
+              <option value="5000 - 10000">5000 - 10000</option>
+              <option value="10000 - 50000">10000 - 50000</option>
+              <option value="Over 50000">Over 50000</option>
             </select>
           </div>
 
           <div>
             <label htmlFor="timeline" className="block text-sm font-medium text-gray-700 mb-2">
-              Expected Timeline
+              Expected Timeline *
             </label>
             <select
               id="timeline"
               name="timeline"
+              required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent text-sm"
             >
               <option value="">Select timeline</option>
-              <option value="urgent">Urgent (Within 1 week)</option>
-              <option value="1-2-weeks">1-2 weeks</option>
-              <option value="2-4-weeks">2-4 weeks</option>
-              <option value="1-3-months">1-3 months</option>
-              <option value="flexible">Flexible</option>
+              <option value="Urgent within one week">Urgent within one week</option>
+              <option value="1 - 2 weeks">1 - 2 weeks</option>
+              <option value="2 - 4 weeks">2 - 4 weeks</option>
+              <option value="Flexible">Flexible</option>
             </select>
           </div>
         </div>

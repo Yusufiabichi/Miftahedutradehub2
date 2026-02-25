@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { getAccessToken } from '../../../utils/auth';
 import ImageUpload from '../../../components/base/ImageUpload';
 
 interface Blog {
@@ -12,13 +11,13 @@ interface Blog {
   image: string;
   tags: string[];
   read_time?: string;
-  is_published: boolean;
-  published_at: string;
+  status?: 'Draft' | 'Published' | 'Archived';
+  is_published?: boolean;
+  published_at?: string;
   created_at: string;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function BlogsManager() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -32,12 +31,10 @@ export default function BlogsManager() {
 
   const fetchBlogs = async () => {
     try {
-      const token = getAccessToken();
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/blogs-api`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(`${API_BASE_URL}/api/blogs`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch blogs');
+      }
       const data = await response.json();
       // Ensure data is always an array
       setBlogs(Array.isArray(data) ? data : []);
@@ -61,28 +58,30 @@ export default function BlogsManager() {
       category: formData.get('category') as string,
       image: formData.get('image') as string,
       tags: (formData.get('tags') as string).split(',').map(tag => tag.trim()),
-      read_time: formData.get('read_time') as string,
-      is_published: formData.get('is_published') === 'true',
+      read_time: (() => {
+        const raw = String(formData.get('read_time') || '').trim();
+        if (!raw) return '';
+        const match = raw.match(/\d+/);
+        return match ? match[0] : raw;
+      })(),
+      status: (formData.get('status') as string) || 'Draft',
     };
 
     try {
-      const token = getAccessToken();
       let response;
       
       if (editingBlog) {
-        response = await fetch(`${SUPABASE_URL}/functions/v1/blogs-api/${editingBlog.id}`, {
+        response = await fetch(`${API_BASE_URL}/api/blogs/${editingBlog.id}`, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(blogData),
         });
       } else {
-        response = await fetch(`${SUPABASE_URL}/functions/v1/blogs-api`, {
+        response = await fetch(`${API_BASE_URL}/api/blogs`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(blogData),
@@ -108,12 +107,8 @@ export default function BlogsManager() {
     if (!confirm('Are you sure you want to delete this blog post?')) return;
     
     try {
-      const token = getAccessToken();
-      await fetch(`${SUPABASE_URL}/functions/v1/blogs-api/${id}`, {
+      await fetch(`${API_BASE_URL}/api/blogs/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
       });
       fetchBlogs();
     } catch (error) {
@@ -254,12 +249,12 @@ export default function BlogsManager() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select
-                  name="is_published"
-                  defaultValue={editingBlog?.is_published ? 'true' : 'false'}
+                  name="status"
+                  defaultValue={editingBlog?.status || (editingBlog?.is_published ? 'Published' : 'Draft')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
                 >
-                  <option value="true">Published</option>
-                  <option value="false">Draft</option>
+                  <option value="Published">Published</option>
+                  <option value="Draft">Draft</option>
                 </select>
               </div>
 
@@ -330,16 +325,16 @@ export default function BlogsManager() {
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-sm ${
-                        blog.is_published
+                        (blog.status || (blog.is_published ? 'Published' : 'Draft')) === 'Published'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}
                     >
-                      {blog.is_published ? 'Published' : 'Draft'}
+                      {blog.status || (blog.is_published ? 'Published' : 'Draft')}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
-                    {new Date(blog.published_at).toLocaleDateString()}
+                    {new Date(blog.published_at || blog.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button

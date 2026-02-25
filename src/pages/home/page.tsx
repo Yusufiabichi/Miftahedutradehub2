@@ -5,9 +5,11 @@ import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import GallerySection from '../../components/feature/GallerySection';
 import { useSEO, generateOrganizationSchema, generateWebPageSchema } from '../../utils/seo';
+import BackToTop from '../../components/BackToTop';
 
 const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 interface Service {
   id: number;
@@ -26,8 +28,18 @@ interface Product {
   specs: string[];
 }
 
-interface BlogPost {
+interface ApiProduct {
   id: number;
+  product_name: string;
+  category: string;
+  description: string;
+  key_features: string | null;
+  specifications: string | null;
+  images: string[] | null;
+}
+
+interface BlogPost {
+  id: number | string;
   title: string;
   excerpt: string;
   image: string;
@@ -65,15 +77,15 @@ export default function Home() {
   });
 
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  // const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
+  const [productsError, setProductsError] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     fetchData();
+    fetchBlogPosts();
     
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
@@ -84,124 +96,121 @@ export default function Home() {
 
   const fetchBlogPosts = async () => {
     try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/blogs-api`, {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'apikey': SUPABASE_ANON_KEY
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Blog posts fetched:', data);
-        setBlogPosts(Array.isArray(data) ? data.slice(0, 4) : []);
-      } else {
-        console.error('Failed to fetch blog posts:', response.status);
+      const response = await fetch(`${API_BASE_URL}/api/blogs`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch blogs');
       }
+
+      const data = await response.json();
+      const blogList = Array.isArray(data) ? data : [];
+      const mappedBlogs: BlogPost[] = blogList
+        .filter((item) => !item.status || item.status === 'Published')
+        .map((item) => ({
+          id: item.id,
+          title: item.title || '',
+          excerpt: item.excerpt || '',
+          image: item.image || '',
+          category: item.category || 'General',
+          created_at: item.created_at || new Date().toISOString(),
+        }));
+
+      setBlogPosts(mappedBlogs);
     } catch (error) {
-      console.error('Error fetching blog posts:', error);
+      console.error('Error fetching blogs:', error);
+      setBlogPosts([]);
     }
+  };
+
+  const parseTextList = (value: string | null | undefined): string[] => {
+    if (!value) return [];
+    return value
+      .split(/\r?\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
   };
 
   const fetchData = async () => {
     try {
-      const fetchWithTimeout = async (url: string, options: Record<string, any>, timeout = 8000) => {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
-        
-        try {
-          const response = await fetch(url, {
-            ...options,
-            signal: controller.signal
-          });
-          clearTimeout(id);
-          return response;
-        } catch (error) {
-          clearTimeout(id);
-          throw error;
-        }
-      };
+      setLoading(true);
+      setProductsError('');
 
-      const [servicesRes, productsRes, blogsRes, testimonialsRes] = await Promise.allSettled([
-        fetchWithTimeout(`${SUPABASE_URL}/functions/v1/services-api`, {
-          headers: { 
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'apikey': SUPABASE_ANON_KEY
-          }
-        }),
-        fetchWithTimeout(`${SUPABASE_URL}/functions/v1/products-api`, {
-          headers: { 
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'apikey': SUPABASE_ANON_KEY
-          }
-        }),
-        fetchWithTimeout(`${SUPABASE_URL}/functions/v1/blogs-api`, {
-          headers: { 
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'apikey': SUPABASE_ANON_KEY
-          }
-        }),
-        fetchWithTimeout(`${SUPABASE_URL}/functions/v1/testimonials-api`, {
-          headers: { 
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'apikey': SUPABASE_ANON_KEY
-          }
-        })
-      ]);
-      void testimonialsRes;
-
-      if (servicesRes.status === 'fulfilled' && servicesRes.value.ok) {
-        const servicesData = await servicesRes.value.json();
-        setServices(Array.isArray(servicesData) ? servicesData.slice(0, 6) : []);
+      const response = await fetch(`${API_BASE_URL}/api/products`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
       }
 
-      if (productsRes.status === 'fulfilled' && productsRes.value.ok) {
-        const productsData = await productsRes.value.json();
-        setProducts(Array.isArray(productsData) ? productsData.slice(0, 5) : []);
-      }
+      const data: ApiProduct[] = await response.json();
+      const mappedProducts: Product[] = data.map((item) => ({
+        id: item.id,
+        name: item.product_name,
+        category: item.category,
+        description: item.description || '',
+        image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : '',
+        specs: parseTextList(item.specifications).slice(0, 3),
+      }));
 
-      if (blogsRes.status === 'fulfilled' && blogsRes.value.ok) {
-        const blogsData = await blogsRes.value.json();
-        console.log('Blogs loaded in fetchData:', blogsData);
-        setBlogPosts(Array.isArray(blogsData) ? blogsData.slice(0, 4) : []);
-      } else if (blogsRes.status === 'rejected') {
-        console.error('Blogs request failed:', blogsRes.reason);
-      }
-
-      // if (testimonialsRes.status === 'fulfilled' && testimonialsRes.value.ok) {
-      //   const testimonialsData = await testimonialsRes.value.json();
-      //   setTestimonials(testimonialsData.slice(0, 3));
-      // }
+      setProducts(mappedProducts);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching products:', error);
+      setProductsError('Unable to load products right now.');
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // const fetchTestimonials = async () => {
-  //   try {
-  //     const response = await fetch(`${SUPABASE_URL}/functions/v1/testimonials-api`, {
-  //       headers: {
-  //         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-  //         'apikey': SUPABASE_ANON_KEY
-  //       }
-  //     });
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setTestimonials(data.slice(0, 3));
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching testimonials:', error);
-  //   }
-  // };
 
   const categories = ['All', ...Array.from(new Set(products.map(p => p.category)))];
   
   const filteredProducts = selectedCategory === 'All' 
     ? products 
     : products.filter(p => p.category === selectedCategory);
+
+
+  const services = [
+    {
+      icon: 'ri-ship-line',
+      title: 'Import & Export Solutions',
+      description: 'Seamless international trade services connecting businesses across borders with reliable logistics and customs support.',
+      path: '/services/import-export',
+      color: 'from-blue-500 to-blue-600'
+    },
+    {
+      icon: 'ri-graduation-cap-line',
+      title: 'Global Education & Scholarships',
+      description: 'Expert guidance for studying abroad, scholarship applications, and university admissions worldwide.',
+      path: '/services/education',
+      color: 'from-yellow-500 to-yellow-600'
+    },
+    {
+      icon: 'ri-exchange-dollar-line',
+      title: 'Currency Exchange & Remittance',
+      description: 'Competitive rates for currency exchange and secure international money transfer services.',
+      path: '/services/currency-exchange',
+      color: 'from-green-500 to-green-600'
+    },
+    {
+      icon: 'ri-shopping-bag-line',
+      title: 'Goods & Services Sourcing',
+      description: 'Professional sourcing solutions for quality products and services from global markets.',
+      path: '/services/sourcing',
+      color: 'from-purple-500 to-purple-600'
+    },
+    {
+      icon: 'ri-flight-takeoff-line',
+      title: 'Flights & Hotel Bookings',
+      description: 'Best deals on international flights and hotel reservations for business and leisure travel.',
+      path: '/services/travel',
+      color: 'from-red-500 to-red-600'
+    },
+    {
+      icon: 'ri-passport-line',
+      title: 'Visa Processing & Travel Advisory',
+      description: 'Complete visa assistance and travel consultation for hassle-free international journeys.',
+      path: '/services/visa',
+      color: 'from-indigo-500 to-indigo-600'
+    }
+  ];
 
   const features = [
     {
@@ -281,6 +290,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Header />
       <WhatsAppButton />
+      <BackToTop />
 
       {/* Enhanced Hero Section */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
@@ -515,47 +525,24 @@ export default function Home() {
             </p>
           </div>
 
-          {loading ? (
-            <div className="text-center py-12">
-              <i className="ri-loader-4-line animate-spin text-5xl text-blue-900"></i>
-            </div>
-          ) : services.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {services.map((service) => (
-                <div key={service.id} className="group bg-white border-2 border-gray-100 rounded-xl p-8 hover:border-yellow-400 hover:shadow-2xl transition-all">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-900 to-blue-700 rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <i className={`${service.icon} text-3xl text-white`}></i>
-                  </div>
-                  <h3 className="text-xl font-bold text-blue-900 mb-3">{service.title}</h3>
-                  <p className="text-gray-600 mb-6 leading-relaxed line-clamp-3">{service.short_description}</p>
-                  <Link
-                    to={`/services/${service.category}`}
-                    className="inline-flex items-center text-blue-900 font-semibold hover:text-yellow-600 transition-colors cursor-pointer whitespace-nowrap"
-                  >
-                    Learn More
-                    <i className="ri-arrow-right-line ml-2"></i>
-                  </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {services.map((service, index) => (
+              <div key={index} className="group bg-white border-2 shadow-xl border-gray-100 rounded-xl p-8 hover:border-yellow-400 hover:shadow-2xl transition-all">
+                <div className={`w-16 h-16 bg-gradient-to-br ${service.color} rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <i className={`${service.icon} text-3xl text-white`}></i>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i className="ri-service-line text-4xl text-blue-900"></i>
+                <h3 className="text-xl font-bold text-blue-900 mb-3">{service.title}</h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">{service.description}</p>
+                <Link
+                  to={service.path}
+                  className="inline-flex items-center text-blue-900 font-semibold hover:text-yellow-600 transition-colors cursor-pointer whitespace-nowrap"
+                >
+                  Learn More
+                  <i className="ri-arrow-right-line ml-2"></i>
+                </Link>
               </div>
-              <h3 className="text-2xl font-bold text-blue-900 mb-3">Services Not Available Yet</h3>
-              <p className="text-gray-600 max-w-md mx-auto mb-6">
-                We're working on adding our comprehensive service offerings. Check back soon!
-              </p>
-              <Link
-                to="/contact"
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
-              >
-                Contact Us for More Info
-                <i className="ri-arrow-right-line ml-2"></i>
-              </Link>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       </section>
 
@@ -569,99 +556,82 @@ export default function Home() {
             </p>
           </div>
 
-          {categories.length > 1 && (
-            <div className="flex flex-wrap justify-center gap-3 mb-12">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap cursor-pointer ${
-                    selectedCategory === category
-                      ? 'bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg'
-                      : 'bg-white text-blue-900 border-2 border-gray-200 hover:border-blue-900 hover:shadow-md'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {loading ? (
-            <div className="text-center py-12">
-              <i className="ri-loader-4-line animate-spin text-5xl text-blue-900"></i>
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
-                {filteredProducts.map((product) => (
-                  <div key={product.id} className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
-                    <div className="relative w-full h-64 bg-gray-50 overflow-hidden">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute top-4 right-4">
-                        <span className="px-3 py-1 bg-yellow-400 text-blue-900 text-xs font-semibold rounded-full">
-                          {product.category}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-lg font-bold text-blue-900 mb-2 group-hover:text-yellow-600 transition-colors">
-                        {product.name}
-                      </h3>
-                      <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-2">
-                        {product.description}
-                      </p>
-                      {product.specs && product.specs.length > 0 && (
-                        <div className="mb-4">
-                          {product.specs.slice(0, 3).map((spec, index) => (
-                            <span key={index} className="inline-block text-xs bg-blue-50 text-blue-900 px-2 py-1 rounded mr-2 mb-2">
-                              {spec}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <Link
-                        to={`/product/${product.id}#inquiry-form`}
-                        className="block w-full text-center px-4 py-2.5 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
-                      >
-                        Inquire Now
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="text-center mt-12">
-                <Link
-                  to="/products"
-                  className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 rounded-lg font-semibold text-lg hover:shadow-xl transition-all whitespace-nowrap cursor-pointer inline-block text-center"
-                >
-                  View All Products
-                </Link>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i className="ri-inbox-line text-4xl text-blue-900"></i>
-              </div>
-              <h3 className="text-2xl font-bold text-blue-900 mb-3">Products Not Available Yet</h3>
-              <p className="text-gray-600 max-w-md mx-auto mb-6">
-                We're currently updating our product catalog. Stay tuned for exciting offerings!
-              </p>
-              <Link
-                to="/contact"
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all whitespace-nowrap cursor-pointer ${
+                  selectedCategory === category
+                    ? 'bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg'
+                    : 'bg-white text-blue-900 border-2 border-gray-200 hover:border-blue-900 hover:shadow-md'
+                }`}
               >
-                Get Custom Quote
-                <i className="ri-arrow-right-line ml-2"></i>
-              </Link>
-            </div>
-          )}
+                {category}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
+            {!loading && productsError && (
+              <div className="col-span-full text-center text-red-600 py-6">{productsError}</div>
+            )}
+            {!loading && !productsError && filteredProducts.length === 0 && (
+              <div className="col-span-full text-center text-gray-600 py-6">No products available.</div>
+            )}
+            {filteredProducts.map((product) => (
+              <div key={product.id} className="group bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                <div className="relative w-full h-64 bg-gray-50 overflow-hidden">
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                      No image
+                    </div>
+                  )}
+                  <div className="absolute top-4 right-4">
+                    <span className="px-3 py-1 bg-yellow-400 text-blue-900 text-xs font-semibold rounded-full">
+                      {product.category}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-blue-900 mb-2 group-hover:text-yellow-600 transition-colors">
+                    {product.name}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-2">
+                    {product.description}
+                  </p>
+                  <div className="mb-4">
+                    {product.specs.map((spec, index) => (
+                      <span key={index} className="inline-block text-xs bg-blue-50 text-blue-900 px-2 py-1 rounded mr-2 mb-2">
+                        {spec}
+                      </span>
+                    ))}
+                  </div>
+                  <Link
+                    to={`/product/${product.id}#inquiry-form`}
+                    className="block w-full text-center px-4 py-2.5 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
+                  >
+                    Inquire Now
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              to="/products"
+              className="px-8 py-4 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold text-lg hover:shadow-xl transition-all whitespace-nowrap cursor-pointer inline-block text-center"
+            >
+              View All Products
+            </Link>
+          </div>
         </div>
       </section>
 

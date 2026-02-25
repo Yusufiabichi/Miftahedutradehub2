@@ -4,8 +4,7 @@ import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import { useSEO, generateWebPageSchema } from '../../utils/seo';
 
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function ContactPage() {
   // SEO
@@ -43,24 +42,23 @@ export default function ContactPage() {
     };
 
     try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/contact-api`, {
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/message`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(contactData),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => null);
       console.log('Contact form response:', result);
 
-      if (response.ok && !result.error) {
+      if (response.ok) {
         setSubmitStatus('success');
         (e.target as HTMLFormElement).reset();
         setTimeout(() => setSubmitStatus('idle'), 5000);
       } else {
-        console.error('Contact form error:', result.error || 'Unknown error');
+        console.error('Contact form error:', result?.message || result?.error || 'Unknown error');
         setSubmitStatus('error');
         setTimeout(() => setSubmitStatus('idle'), 5000);
       }
@@ -77,19 +75,19 @@ export default function ContactPage() {
     {
       icon: 'ri-map-pin-line',
       title: 'Visit Us',
-      details: ['123 Trade Center Road', 'Dhaka 1215, Bangladesh'],
+      details: ['123 Ahmadu Bello Way, Kano 700001, Nigeria'],
       color: 'from-blue-500 to-blue-600'
     },
     {
       icon: 'ri-phone-line',
       title: 'Call Us',
-      details: ['+880 1234-567890', '+880 1987-654321'],
+      details: ['+234 816 241 1941', '+234 803 456 7890'],
       color: 'from-green-500 to-green-600'
     },
     {
       icon: 'ri-mail-line',
       title: 'Email Us',
-      details: ['info@miftahedutrade.com', 'support@miftahedutrade.com'],
+      details: ['info@miftahedutradehub.com', 'support@miftahedutradehub.com'],
       color: 'from-yellow-500 to-yellow-600'
     },
     {
@@ -281,7 +279,7 @@ export default function ContactPage() {
 
               <div className="rounded-xl overflow-hidden shadow-xl mb-8 h-96">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.9084346729845!2d90.39225631498145!3d23.750891084588697!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b8b087026b81%3A0x8fa563bbdd5904c2!2sDhaka%2C%20Bangladesh!5e0!3m2!1sen!2s!4v1234567890123!5m2!1sen!2s"
+                  src="https://www.google.com/maps?q=123%20Ahmadu%20Bello%20Way,%20Kano%20700001,%20Nigeria&output=embed"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -358,14 +356,14 @@ export default function ContactPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="tel:+8801234567890"
+              href="tel:+2348162411941"
               className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-900 rounded-lg font-semibold text-lg hover:shadow-2xl transition-all whitespace-nowrap cursor-pointer"
             >
               <i className="ri-phone-line mr-2"></i>
               Call Now
             </a>
             <a
-              href="https://wa.me/8801234567890"
+              href="https://wa.me/2348162411941"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center px-8 py-4 bg-green-500 text-white rounded-lg font-semibold text-lg hover:bg-green-600 transition-all whitespace-nowrap cursor-pointer"

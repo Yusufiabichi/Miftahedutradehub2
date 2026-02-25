@@ -117,12 +117,12 @@ export default function Footer() {
               © {currentYear} Miftah Edu-Trade Hub Ltd. All rights reserved.
             </p>
             <a 
-              href="https://readdy.ai/?origin=logo" 
+              href="https://yusufias-portfolio.vercel.app" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-blue-200 hover:text-yellow-400 text-sm transition-colors"
             >
-              Powered by Readdy
+              Developed by Yusufia Dev
             </a>
           </div>
         </div>

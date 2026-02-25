@@ -4,9 +4,7 @@ import Header from '../../components/feature/Header';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import { useSEO, generateWebPageSchema } from '../../utils/seo';
-
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+import BackToTop from '../../components/BackToTop';
 
 interface Product {
   id: number;
@@ -16,6 +14,17 @@ interface Product {
   image: string;
   specs: string[];
 }
+
+interface ApiProduct {
+  id: number;
+  product_name: string;
+  category: string;
+  description: string;
+  specifications: string | null;
+  images: string[] | null;
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export default function ProductsPage() {
   // SEO
@@ -34,36 +43,53 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>(['All']);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
+
+  const categories = ['All', ...Array.from(new Set(products.map((product) => product.category)))];
+
+  const parseTextList = (value: string | null | undefined): string[] => {
+    if (!value) return [];
+    return value
+      .split(/\r?\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setFetchError('');
+
+      const response = await fetch(`${API_BASE_URL}/api/products`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      }
+
+      const data: ApiProduct[] = await response.json();
+      const mappedProducts: Product[] = data.map((item) => ({
+        id: item.id,
+        name: item.product_name,
+        category: item.category,
+        description: item.description || '',
+        image: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : '',
+        specs: parseTextList(item.specifications),
+      }));
+
+      setProducts(mappedProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setFetchError('Unable to load products right now.');
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchProducts();
   }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/products-api`, {
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-        
-        // Extract unique categories
-        const uniqueCategories = ['All', ...Array.from(new Set(data.map((p: Product) => p.category)))];
-        setCategories(uniqueCategories);
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (selectedCategory === 'All') {
@@ -77,6 +103,7 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <WhatsAppButton />
+      <BackToTop />
 
       {/* Hero Section */}
       <section className="pt-32 pb-16 bg-gradient-to-br from-blue-950 via-blue-900 to-blue-800 text-white relative overflow-hidden">
@@ -96,99 +123,98 @@ export default function ProductsPage() {
       </section>
 
       {/* Category Filter */}
-      {categories.length > 1 && (
-        <section className="py-8 bg-white border-b border-gray-200 sticky top-20 z-30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap justify-center gap-3">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
-                    selectedCategory === category
-                      ? 'bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg'
-                      : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-900 hover:text-blue-900'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
+      <section className="py-8 bg-white border-b border-gray-200 sticky top-20 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap justify-center gap-3">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-6 py-3 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  selectedCategory === category
+                    ? 'bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-900 hover:text-blue-900'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Products Grid */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {!loading && filteredProducts.length > 0 && (
-            <div className="mb-8">
-              <p className="text-gray-600 text-center">
-                Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
-                {selectedCategory !== 'All' && ` in ${selectedCategory}`}
-              </p>
-            </div>
+          <div className="mb-8">
+            <p className="text-gray-600 text-center">
+              Showing {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+              {selectedCategory !== 'All' && ` in ${selectedCategory}`}
+            </p>
+          </div>
+
+          {loading && (
+            <div className="text-center text-gray-500 py-8">Loading products...</div>
+          )}
+          {!loading && fetchError && (
+            <div className="text-center text-red-600 py-8">{fetchError}</div>
           )}
 
-          {loading ? (
-            <div className="text-center py-20">
-              <i className="ri-loader-4-line animate-spin text-6xl text-blue-900"></i>
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all group"
-                >
-                  <div className="relative h-64 w-full overflow-hidden">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all group"
+              >
+                <div className="relative h-64 w-full overflow-hidden">
+                  {product.image ? (
                     <img
                       src={product.image}
                       alt={product.name}
                       className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
                     />
-                    <div className="absolute top-4 left-4">
-                      <span className="px-4 py-2 bg-blue-900 text-white text-sm font-semibold rounded-full">
-                        {product.category}
-                      </span>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                      No image
                     </div>
-                  </div>
-
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{product.name}</h3>
-                    <p className="text-gray-600 mb-4 leading-relaxed">{product.description}</p>
-
-                    {product.specs && product.specs.length > 0 && (
-                      <div className="space-y-2 mb-6">
-                        {product.specs.slice(0, 4).map((spec, index) => (
-                          <div key={index} className="flex items-center text-sm text-gray-700">
-                            <div className="w-5 h-5 flex items-center justify-center">
-                              <i className="ri-checkbox-circle-fill text-green-600"></i>
-                            </div>
-                            <span className="ml-2">{spec}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <Link
-                      to={`/product/${product.id}`}
-                      className="block w-full px-4 py-3 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg text-center font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
-                    >
-                      Inquire Now
-                    </Link>
+                  )}
+                  <div className="absolute top-4 left-4">
+                    <span className="px-4 py-2 bg-blue-900 text-white text-sm font-semibold rounded-full">
+                      {product.category}
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
+
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{product.name}</h3>
+                  <p className="text-gray-600 mb-4 leading-relaxed">{product.description}</p>
+
+                  <div className="space-y-2 mb-6">
+                    {product.specs.map((spec, index) => (
+                      <div key={index} className="flex items-center text-sm text-gray-700">
+                        <div className="w-5 h-5 flex items-center justify-center">
+                          <i className="ri-checkbox-circle-fill text-green-600"></i>
+                        </div>
+                        <span className="ml-2">{spec}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Link
+                    to={`/product/${product.id}`}
+                    className="block w-full px-4 py-3 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg text-center font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
+                  >
+                    Inquire Now
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {!loading && !fetchError && filteredProducts.length === 0 && (
             <div className="text-center py-16">
               <i className="ri-inbox-line text-6xl text-gray-400 mb-4"></i>
-              <p className="text-xl text-gray-600">
-                {selectedCategory === 'All' 
-                  ? 'No products available at the moment' 
-                  : `No products found in ${selectedCategory}`}
-              </p>
+              <p className="text-xl text-gray-600">No products found in this category</p>
             </div>
           )}
         </div>
@@ -212,10 +238,7 @@ export default function ProductsPage() {
               Contact Us
             </Link>
             <button
-              onClick={() => {
-                const widget = document.querySelector('#vapi-widget-floating-button') as HTMLElement;
-                if (widget) widget.click();
-              }}
+              onClick={() => document.querySelector('#vapi-widget-floating-button')?.click()}
               className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-lg font-semibold hover:bg-white/20 transition-all whitespace-nowrap cursor-pointer inline-flex items-center"
             >
               <i className="ri-customer-service-2-line mr-2"></i>
