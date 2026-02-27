@@ -15,73 +15,39 @@ export default function GallerySection() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   const galleryItems: GalleryItem[] = [
-    {
-      id: 1,
-      type: 'image',
-      url: 'https://readdy.ai/api/search-image?query=modern%20cargo%20truck%20on%20highway%20professional%20commercial%20photography%20blue%20sky%20background%20high%20quality%20detailed%20vehicle&width=1200&height=800&seq=gallery1&orientation=landscape',
-      title: 'Heavy Duty Cargo Truck',
-      description: 'Latest model cargo truck for international shipping',
-      category: 'Vehicles'
-    },
-    {
-      id: 2,
-      type: 'image',
-      url: 'https://readdy.ai/api/search-image?query=university%20campus%20students%20studying%20modern%20architecture%20bright%20daylight%20educational%20environment%20diverse%20students&width=1200&height=800&seq=gallery2&orientation=landscape',
-      title: 'International Students',
-      description: 'Students at partner universities abroad',
-      category: 'Education'
-    },
-    {
-      id: 3,
-      type: 'video',
-      url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-      thumbnail: 'https://readdy.ai/api/search-image?query=currency%20exchange%20money%20transfer%20financial%20services%20professional%20office%20modern%20banking&width=1200&height=800&seq=gallery3&orientation=landscape',
-      title: 'Currency Exchange Process',
-      description: 'How our currency exchange service works',
-      category: 'Finance'
-    },
-    {
-      id: 4,
-      type: 'image',
-      url: 'https://readdy.ai/api/search-image?query=agricultural%20tractor%20working%20in%20field%20farming%20equipment%20green%20landscape%20professional%20machinery&width=1200&height=800&seq=gallery4&orientation=landscape',
-      title: 'Agricultural Equipment',
-      description: 'Modern tractors for farming operations',
-      category: 'Vehicles'
-    },
-    {
-      id: 5,
-      type: 'image',
-      url: 'https://readdy.ai/api/search-image?query=visa%20passport%20travel%20documents%20airport%20international%20travel%20professional%20photography&width=1200&height=800&seq=gallery5&orientation=landscape',
-      title: 'Visa Processing',
-      description: 'Successful visa applications and travel documents',
-      category: 'Travel'
-    },
-    {
-      id: 6,
-      type: 'video',
-      url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-      thumbnail: 'https://readdy.ai/api/search-image?query=electric%20bike%20city%20street%20modern%20transportation%20eco%20friendly%20urban%20environment&width=1200&height=800&seq=gallery6&orientation=landscape',
-      title: 'Electric Bikes Demo',
-      description: 'Features and benefits of our electric bikes',
-      category: 'Products'
-    },
-    {
-      id: 7,
-      type: 'image',
-      url: 'https://readdy.ai/api/search-image?query=smartphone%20modern%20technology%20mobile%20phone%20sleek%20design%20professional%20product%20photography&width=1200&height=800&seq=gallery7&orientation=landscape',
-      title: 'Latest Smartphones',
-      description: 'Premium smartphones with advanced features',
-      category: 'Products'
-    },
-    {
-      id: 8,
-      type: 'image',
-      url: 'https://readdy.ai/api/search-image?query=tipper%20truck%20construction%20site%20heavy%20machinery%20industrial%20equipment%20professional%20photography&width=1200&height=800&seq=gallery8&orientation=landscape',
-      title: 'Commercial Tipper Trucks',
-      description: 'Heavy-duty tipper trucks for construction',
-      category: 'Vehicles'
-    }
-  ];
+  {
+    id: 1,
+    type: 'image',
+    url: './scholar.png',
+    title: 'International Students',
+    description: 'Students learning and engaging in global education environments.',
+    category: 'Education'
+  },
+  {
+    id: 2,
+    type: 'image',
+    url: './tourist-visa.jpeg',
+    title: 'Visa & Travel Preparation',
+    description: 'Planning and preparing documents for travel and visa applications.',
+    category: 'Travel & Visa'
+  },
+  {
+    id: 3,
+    type: 'image',
+    url: './export.jpg',
+    title: 'Global Trade & Shipping',
+    description: 'Cargo containers and shipping services representing import-export operations.',
+    category: 'Trade'
+  },
+  {
+    id: 4,
+    type: 'image',
+    url: './c-exchange.avif',
+    title: 'Currency Exchange',
+    description: 'Close-up of currency notes representing financial exchange services.',
+    category: 'Finance'
+  }
+];
 
   useEffect(() => {
     if (!isAutoPlaying) return;

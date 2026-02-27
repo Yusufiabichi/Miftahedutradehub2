@@ -17,6 +17,94 @@ const getMessagesColumnMap = async () => {
   };
 };
 
+const resolveProductEnquiryTable = async () => {
+  const tableCandidates = ["product_enquiries", "product_inquiries", "product-enquiries"];
+  const placeholders = tableCandidates.map(() => "?").join(", ");
+  const [rows] = await pool.execute(
+    `SELECT table_name
+     FROM information_schema.tables
+     WHERE table_schema = DATABASE()
+       AND table_name IN (${placeholders})
+     ORDER BY FIELD(table_name, ${placeholders})
+     LIMIT 1`,
+    [...tableCandidates, ...tableCandidates],
+  );
+
+  return rows[0]?.table_name || rows[0]?.TABLE_NAME || null;
+};
+
+const getProductEnquiryColumnMap = async (tableName) => {
+  const [columnRows] = await pool.execute(`SHOW COLUMNS FROM \`${tableName}\``);
+  const availableColumns = new Set(columnRows.map((col) => col.Field));
+  const pickColumn = (candidates) => candidates.find((col) => availableColumns.has(col)) || null;
+
+  return {
+    id: pickColumn(["id", "enquiry_id", "inquiry_id"]),
+    product_name: pickColumn(["product_name", "product", "product_title"]),
+    product_id: pickColumn(["product_id"]),
+    category: pickColumn(["category", "product_category"]),
+    customer_name: pickColumn(["customer_name", "name", "fullname", "full_name"]),
+    email: pickColumn(["email", "customer_email"]),
+    phone: pickColumn(["phone", "phone_number", "customer_phone"]),
+    company: pickColumn(["company", "company_name"]),
+    quantity: pickColumn(["quantity", "quantity_needed", "qty"]),
+    message: pickColumn(["message", "inquiry_message", "details"]),
+    status: pickColumn(["status"]),
+    created_at: pickColumn(["created_at", "date_created", "createdon", "created_on"]),
+  };
+};
+
+export const getProductEnquiries = async (_req, res) => {
+  try {
+    const tableName = await resolveProductEnquiryTable();
+    if (!tableName) {
+      return res.status(500).json({ message: "Product enquiries table not found" });
+    }
+
+    const columnMap = await getProductEnquiryColumnMap(tableName);
+
+    if (
+      !columnMap.id ||
+      !columnMap.product_name ||
+      !columnMap.customer_name ||
+      !columnMap.email ||
+      !columnMap.phone ||
+      !columnMap.message
+    ) {
+      return res.status(500).json({
+        message: `${tableName} table is missing required columns`,
+      });
+    }
+
+    const selectCreatedAt = columnMap.created_at
+      ? `\`${columnMap.created_at}\` AS created_at`
+      : "NULL AS created_at";
+    const orderBy = columnMap.created_at
+      ? `\`${columnMap.created_at}\` DESC`
+      : `\`${columnMap.id}\` DESC`;
+
+    const [rows] = await pool.execute(
+      `SELECT
+        \`${columnMap.id}\` AS id,
+        \`${columnMap.product_name}\` AS product_name,
+        \`${columnMap.customer_name}\` AS customer_name,
+        \`${columnMap.email}\` AS email,
+        \`${columnMap.phone}\` AS phone,
+        \`${columnMap.message}\` AS message,
+        ${selectCreatedAt}
+      FROM \`${tableName}\`
+      ORDER BY ${orderBy}`,
+    );
+
+    return res.status(200).json(rows);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch product enquiries",
+      error: error.message,
+    });
+  }
+};
+
 export const getServiceEnquiries = async (_req, res) => {
   try {
     const [rows] = await pool.execute(
@@ -115,6 +203,77 @@ export const createServiceEnquiry = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Failed to submit service enquiry",
+      error: error.message,
+    });
+  }
+};
+
+export const createProductEnquiry = async (req, res) => {
+  try {
+    const {
+      product_name,
+      product_id = null,
+      category = null,
+      customer_name,
+      email,
+      phone,
+      company = null,
+      quantity = 1,
+      message,
+    } = req.body;
+
+    if (!product_name || !customer_name || !email || !phone || !message) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const tableName = await resolveProductEnquiryTable();
+    if (!tableName) {
+      return res.status(500).json({
+        message: "Product enquiries table not found",
+      });
+    }
+
+    const columnMap = await getProductEnquiryColumnMap(tableName);
+
+    if (!columnMap.product_name || !columnMap.customer_name || !columnMap.email || !columnMap.phone || !columnMap.message) {
+      return res.status(500).json({
+        message: `${tableName} table is missing required columns`,
+      });
+    }
+
+    const payloadByColumn = {
+      [columnMap.product_name]: product_name,
+      [columnMap.customer_name]: customer_name,
+      [columnMap.email]: email,
+      [columnMap.phone]: phone,
+      [columnMap.message]: message,
+      ...(columnMap.product_id ? { [columnMap.product_id]: product_id } : {}),
+      ...(columnMap.category ? { [columnMap.category]: category } : {}),
+      ...(columnMap.company ? { [columnMap.company]: company } : {}),
+      ...(columnMap.quantity ? { [columnMap.quantity]: Number(quantity) || 1 } : {}),
+      ...(columnMap.status ? { [columnMap.status]: "new" } : {}),
+    };
+
+    const insertColumns = Object.keys(payloadByColumn);
+    const values = insertColumns.map((key) => {
+      const value = payloadByColumn[key];
+      return value === "" ? null : value;
+    });
+    const placeholders = insertColumns.map(() => "?").join(", ");
+
+    const quotedColumns = insertColumns.map((column) => `\`${column}\``).join(", ");
+    const [result] = await pool.execute(
+      `INSERT INTO \`${tableName}\` (${quotedColumns}) VALUES (${placeholders})`,
+      values,
+    );
+
+    return res.status(201).json({
+      message: "Product enquiry submitted successfully",
+      id: result.insertId,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to submit product enquiry",
       error: error.message,
     });
   }
@@ -282,6 +441,36 @@ export const deleteServiceEnquiry = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Failed to delete service enquiry",
+      error: error.message,
+    });
+  }
+};
+
+export const deleteProductEnquiry = async (req, res) => {
+  try {
+    const tableName = await resolveProductEnquiryTable();
+    if (!tableName) {
+      return res.status(500).json({ message: "Product enquiries table not found" });
+    }
+
+    const columnMap = await getProductEnquiryColumnMap(tableName);
+    if (!columnMap.id) {
+      return res.status(500).json({ message: `${tableName} table is missing id column` });
+    }
+
+    const [result] = await pool.execute(
+      `DELETE FROM \`${tableName}\` WHERE \`${columnMap.id}\` = ?`,
+      [req.params.id],
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: "Product enquiry not found" });
+    }
+
+    return res.status(200).json({ message: "Product enquiry deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to delete product enquiry",
       error: error.message,
     });
   }

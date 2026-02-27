@@ -148,11 +148,11 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="mt-6 text-center">
+        {/* <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            Protected by Supabase Authentication
+            Secured by Supabase Authentication. If you don't have an account, please contact the administrator.
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

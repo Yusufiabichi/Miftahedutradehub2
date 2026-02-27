@@ -54,6 +54,8 @@ export default function ProductDetail() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,6 +119,52 @@ export default function ProductDetail() {
       }, 100);
     }
   }, []);
+
+  const handleInquirySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!product) return;
+    const form = e.currentTarget;
+
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    const formData = new FormData(form);
+    const inquiryData = {
+      product_id: product.id,
+      product_name: product.name,
+      // category: product.category,
+      customer_name: (formData.get('customer_name') as string) || '',
+      email: (formData.get('email') as string) || '',
+      phone: (formData.get('phone') as string) || '',
+      company: (formData.get('company') as string) || '',
+      quantity: Number(formData.get('quantity') || quantity || 1),
+      message: (formData.get('message') as string) || '',
+    };
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/product`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(inquiryData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit inquiry');
+      }
+
+      setSubmitStatus('success');
+      form.reset();
+      setQuantity(1);
+      setTimeout(() => setSubmitStatus('idle'), 5000);
+    } catch (submitError) {
+      console.error('Error submitting product inquiry:', submitError);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const relatedProducts = useMemo(() => {
     if (!product) return [];
@@ -285,26 +333,26 @@ export default function ProductDetail() {
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">Request Product Information</h2>
               <p className="text-blue-100 text-center mb-8">Fill out the form below and our team will get back to you within 24 hours</p>
 
-              <form className="space-y-6">
+              <form onSubmit={handleInquirySubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-white font-semibold mb-2">Full Name *</label>
-                    <input type="text" required className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none" placeholder="Enter your name" />
+                    <input type="text" name="customer_name" required className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none" placeholder="Enter your name" />
                   </div>
                   <div>
                     <label className="block text-white font-semibold mb-2">Email Address *</label>
-                    <input type="email" required className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none" placeholder="your@email.com" />
+                    <input type="email" name="email" required className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none" placeholder="your@email.com" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-white font-semibold mb-2">Phone Number *</label>
-                    <input type="tel" required className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none" placeholder="+880 1XXX-XXXXXX" />
+                    <input type="tel" name="phone" required className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none" placeholder="+880 1XXX-XXXXXX" />
                   </div>
                   <div>
                     <label className="block text-white font-semibold mb-2">Company (Optional)</label>
-                    <input type="text" className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none" placeholder="Your company name" />
+                    <input type="text" name="company" className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none" placeholder="Your company name" />
                   </div>
                 </div>
 
@@ -323,6 +371,7 @@ export default function ProductDetail() {
                   <input
                     type="number"
                     min="1"
+                    name="quantity"
                     value={quantity}
                     onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
                     className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none"
@@ -334,16 +383,30 @@ export default function ProductDetail() {
                   <textarea
                     required
                     rows={5}
+                    name="message"
                     className="w-full px-4 py-3 rounded-lg border-2 border-blue-300 focus:border-yellow-400 focus:outline-none resize-none"
                     placeholder="Tell us about your requirements, delivery location, and any specific questions..."
                   ></textarea>
                 </div>
 
+                {submitStatus === 'success' && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-900">
+                    Inquiry submitted successfully. Our team will contact you soon.
+                  </div>
+                )}
+
+                {submitStatus === 'error' && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+                    Failed to submit inquiry. Please try again.
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 rounded-lg font-semibold text-lg hover:shadow-2xl transition-all whitespace-nowrap cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-blue-900 rounded-lg font-semibold text-lg hover:shadow-2xl transition-all whitespace-nowrap cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Submit Inquiry
+                  {isSubmitting ? 'Submitting...' : 'Submit Inquiry'}
                 </button>
               </form>
             </div>

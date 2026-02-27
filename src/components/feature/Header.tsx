@@ -19,8 +19,8 @@ export default function Header() {
     { path: '/', label: 'Home' },
     { path: '/about', label: 'About Us' },
     { path: '/services', label: 'Services' },
-    { path: '/testimonials', label: 'Testimonials' },
-    { path: '/faq', label: 'FAQ' },
+    // { path: '/testimonials', label: 'Testimonials' },
+    // { path: '/faq', label: 'FAQ' },
     { path: '/contact', label: 'Contact' },
   ];
 
@@ -29,13 +29,12 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-900 to-blue-700 rounded-lg flex items-center justify-center">
-              <i className="ri-global-line text-2xl text-yellow-400"></i>
-            </div>
-            <div className="flex flex-col">
+            {/* <img src="/nobglogo3.png" alt="Miftah Edu-Trade Hub Logo" className="w-15 h-12 object-contain" /> */}
+            <img src="/nobglogo2.png" alt="Miftah Edu-Trade Hub Logo" className="w-15 h-12 object-contain" />
+            {/* <div className="flex flex-col">
               <span className="text-xl font-bold text-blue-900">Miftah Edu-Trade Hub</span>
               <span className="text-xs text-gray-600">Global Opportunities</span>
-            </div>
+            </div> */}
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
@@ -63,12 +62,12 @@ export default function Header() {
             >
               Blog
             </Link>
-            <Link to="/testimonials" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors cursor-pointer whitespace-nowrap">
+            {/* <Link to="/testimonials" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors cursor-pointer whitespace-nowrap">
               Testimonials
             </Link>
             <Link to="/faqs" className="text-gray-700 hover:text-yellow-600 font-medium transition-colors cursor-pointer whitespace-nowrap">
               FAQs
-            </Link>
+            </Link> */}
             <Link
               to="/contact"
               className="px-6 py-2 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
@@ -123,7 +122,7 @@ export default function Header() {
           >
             Blog
           </Link>
-          <Link
+          {/* <Link
             to="/testimonials"
             className="block px-3 py-2 text-gray-700 hover:text-yellow-600 hover:bg-gray-50 rounded-lg font-medium transition-colors cursor-pointer"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -136,7 +135,7 @@ export default function Header() {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             FAQs
-          </Link>
+          </Link> */}
           <Link
             to="/contact"
             className="block px-3 py-2 bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg font-semibold hover:shadow-lg transition-all cursor-pointer"

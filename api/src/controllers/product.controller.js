@@ -151,6 +151,73 @@ export const createProduct = async (req, res) => {
   }
 };
 
+export const updateProduct = async (req, res) => {
+  let connection;
+
+  try {
+    const {
+      productName,
+      category,
+      description = null,
+      keyFeatures = null,
+      specifications = null,
+      images,
+    } = req.body;
+
+    if (!productName || !category) {
+      return res.status(400).json({ message: "productName and category are required" });
+    }
+
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [result] = await connection.execute(
+      `UPDATE products
+      SET product_name = ?, category = ?, description = ?, key_features = ?, specifications = ?
+      WHERE id = ?`,
+      [productName, category, description, keyFeatures, specifications, req.params.id],
+    );
+
+    if (!result.affectedRows) {
+      await connection.rollback();
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (images !== undefined) {
+      await connection.execute("DELETE FROM product_images WHERE product_id = ?", [req.params.id]);
+
+      const imageList = Array.isArray(images)
+        ? images
+        : images
+          ? [images]
+          : [];
+
+      if (imageList.length) {
+        const placeholders = imageList.map(() => "(?, ?)").join(", ");
+        const values = imageList.flatMap((imageUrl) => [req.params.id, imageUrl]);
+
+        await connection.execute(
+          `INSERT INTO product_images (product_id, image_url) VALUES ${placeholders}`,
+          values,
+        );
+      }
+    }
+
+    await connection.commit();
+
+    return res.status(200).json({ message: "Product updated successfully" });
+  } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
+    return res.status(500).json({ message: "Failed to update product", error: error.message });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+};
+
 export const deleteProduct = async (req, res) => {
   let connection;
 

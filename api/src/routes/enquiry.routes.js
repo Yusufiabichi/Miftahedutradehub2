@@ -1,10 +1,13 @@
 import { Router } from "express";
 import {
+  createProductEnquiry,
   createContactMessage,
   createServiceEnquiry,
   deleteContactMessage,
+  deleteProductEnquiry,
   deleteServiceEnquiry,
   getContactMessages,
+  getProductEnquiries,
   getServiceEnquiries,
   updateContactMessageStatus,
 } from "../controllers/enquiry.controller.js";
@@ -17,6 +20,9 @@ router.get("/", (_req, res) => {
 
 router.get("/service", getServiceEnquiries);
 router.post("/service", createServiceEnquiry);
+router.get("/product", getProductEnquiries);
+router.post("/product", createProductEnquiry);
+router.delete("/product/:id", deleteProductEnquiry);
 router.delete("/service/:id", deleteServiceEnquiry);
 router.get("/message", getContactMessages);
 router.post("/message", createContactMessage);

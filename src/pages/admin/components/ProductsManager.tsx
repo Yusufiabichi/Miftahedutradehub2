@@ -190,21 +190,14 @@ export default function ProductsManager() {
       return;
     }
 
-    if (editingProduct) {
-      setProducts(products.map(product =>
-        product.id === editingProduct.id
-          ? { ...product, name, category, description, image, images, features, specifications }
-          : product
-      ));
-      setShowAddModal(false);
-      setEditingProduct(null);
-      setImagePreviews([]);
-      return;
-    }
-
     try {
-      const response = await fetch(`${API_BASE_URL}/api/products`, {
-        method: 'POST',
+      const isEditing = Boolean(editingProduct);
+      const url = isEditing
+        ? `${API_BASE_URL}/api/products/${editingProduct!.id}`
+        : `${API_BASE_URL}/api/products`;
+
+      const response = await fetch(url, {
+        method: isEditing ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -220,7 +213,7 @@ export default function ProductsManager() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        let errorMessage = 'Failed to create product';
+        let errorMessage = isEditing ? 'Failed to update product' : 'Failed to create product';
 
         try {
           const parsed = JSON.parse(errorText);

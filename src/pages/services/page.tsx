@@ -3,6 +3,7 @@ import Header from '../../components/feature/Header';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import { useSEO, generateWebPageSchema } from '../../utils/seo';
+import BackToTop from '../../components/BackToTop';
 // import BackToTop from '../../components/BackToTop';
 
 export default function ServicesPage() {
@@ -98,6 +99,7 @@ export default function ServicesPage() {
       <Header />
       <WhatsAppButton />
       {/* <BackToTop /> */}
+      <BackToTop />
 
       <section className="relative h-96 flex items-center justify-center overflow-hidden">
         <div 

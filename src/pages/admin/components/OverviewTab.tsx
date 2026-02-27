@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getAccessToken, ensureValidSession } from '../../../utils/auth';
 
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 interface Stats {
   // services: number;
@@ -35,58 +33,35 @@ export default function OverviewTab() {
 
   const fetchStats = async () => {
     setLoading(true);
-    const isValid = await ensureValidSession();
-    if (!isValid) return;
 
     try {
-      const token = getAccessToken();
-      
       // Fetch all data in parallel
       const [
-        // servicesRes,
         productsRes,
         blogsRes,
-        // testimonialsRes,
         messagesRes,
         serviceInquiriesRes,
         productInquiriesRes,
-        // galleryRes,
       ] = await Promise.all([
-        fetch(`${SUPABASE_URL}/functions/v1/products-api`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
-        }),
-        fetch(`${SUPABASE_URL}/functions/v1/blogs-api`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
-        }),
-        fetch(`${SUPABASE_URL}/functions/v1/contact-api`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
-        }),
-        fetch(`${SUPABASE_URL}/functions/v1/service-inquiries-api`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
-        }),
-        fetch(`${SUPABASE_URL}/functions/v1/product-inquiries-api`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'apikey': SUPABASE_ANON_KEY },
-        }),
+        fetch(`${API_BASE_URL}/api/products`),
+        fetch(`${API_BASE_URL}/api/blogs`),
+        fetch(`${API_BASE_URL}/api/enquiries/message`),
+        fetch(`${API_BASE_URL}/api/enquiries/service`),
+        fetch(`${API_BASE_URL}/api/enquiries/product`),
       ]);
 
       const [
-        // services,
         products,
         blogs,
-        // testimonials,
         messages,
         serviceInquiries,
         productInquiries,
-        // gallery,
       ] = await Promise.all([
-        // servicesRes.ok ? servicesRes.json() : [],
         productsRes.ok ? productsRes.json() : [],
         blogsRes.ok ? blogsRes.json() : [],
-        // testimonialsRes.ok ? testimonialsRes.json() : [],
         messagesRes.ok ? messagesRes.json() : [],
         serviceInquiriesRes.ok ? serviceInquiriesRes.json() : [],
         productInquiriesRes.ok ? productInquiriesRes.json() : [],
-        // galleryRes.ok ? galleryRes.json() : [],
       ]);
 
       setStats({
