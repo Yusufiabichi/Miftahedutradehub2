@@ -24,7 +24,7 @@ interface ApiProduct {
   images: string[] | null;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function ProductsPage() {
   // SEO
@@ -61,7 +61,7 @@ export default function ProductsPage() {
       setLoading(true);
       setFetchError('');
 
-      const response = await fetch(`${API_BASE_URL}/api/products`);
+      const response = await fetch("/api/products");
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
@@ -252,3 +252,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+

@@ -17,7 +17,7 @@ interface Blog {
   created_at: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function BlogsManager() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -31,7 +31,7 @@ export default function BlogsManager() {
 
   const fetchBlogs = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/blogs`);
+      const response = await fetch("/api/blogs");
       if (!response.ok) {
         throw new Error('Failed to fetch blogs');
       }
@@ -71,7 +71,7 @@ export default function BlogsManager() {
       let response;
       
       if (editingBlog) {
-        response = await fetch(`${API_BASE_URL}/api/blogs/${editingBlog.id}`, {
+        response = await fetch(`/api/blogs/${editingBlog.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ export default function BlogsManager() {
           body: JSON.stringify(blogData),
         });
       } else {
-        response = await fetch(`${API_BASE_URL}/api/blogs`, {
+        response = await fetch("/api/blogs", {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ export default function BlogsManager() {
     if (!confirm('Are you sure you want to delete this blog post?')) return;
     
     try {
-      await fetch(`${API_BASE_URL}/api/blogs/${id}`, {
+      await fetch(`/api/blogs/${id}`, {
         method: 'DELETE',
       });
       fetchBlogs();
@@ -359,3 +359,4 @@ export default function BlogsManager() {
     </div>
   );
 }
+

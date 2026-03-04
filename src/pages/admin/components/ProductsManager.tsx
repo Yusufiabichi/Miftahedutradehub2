@@ -23,7 +23,7 @@ interface ApiProduct {
   images: string[] | null;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -52,7 +52,7 @@ export default function ProductsManager() {
       setIsLoading(true);
       setFetchError('');
 
-      const response = await fetch(`${API_BASE_URL}/api/products`);
+      const response = await fetch("/api/products");
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
@@ -99,7 +99,7 @@ export default function ProductsManager() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
+      const response = await fetch(`/api/products/${id}`, {
         method: 'DELETE',
       });
 
@@ -193,8 +193,8 @@ export default function ProductsManager() {
     try {
       const isEditing = Boolean(editingProduct);
       const url = isEditing
-        ? `${API_BASE_URL}/api/products/${editingProduct!.id}`
-        : `${API_BASE_URL}/api/products`;
+        ? `/api/products/${editingProduct!.id}`
+        : "/api/products";
 
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',
@@ -494,3 +494,4 @@ export default function ProductsManager() {
     </div>
   );
 }
+

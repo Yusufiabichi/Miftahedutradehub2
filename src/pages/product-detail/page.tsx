@@ -4,7 +4,7 @@ import Header from '../../components/feature/Header';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ApiProduct {
   id: number;
@@ -70,8 +70,8 @@ export default function ProductDetail() {
         setError('');
 
         const [productRes, allRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/products/${productId}`),
-          fetch(`${API_BASE_URL}/api/products`),
+          fetch(`/api/products/${productId}`),
+          fetch("/api/products"),
         ]);
 
         if (!productRes.ok) {
@@ -142,7 +142,7 @@ export default function ProductDetail() {
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/enquiries/product`, {
+      const response = await fetch("/api/enquiries/product", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -458,3 +458,4 @@ export default function ProductDetail() {
     </div>
   );
 }
+

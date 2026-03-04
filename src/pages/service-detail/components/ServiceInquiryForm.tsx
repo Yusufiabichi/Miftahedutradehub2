@@ -5,7 +5,7 @@ interface ServiceInquiryFormProps {
   serviceName: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function ServiceInquiryForm({ serviceName }: ServiceInquiryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -222,3 +222,4 @@ export default function ServiceInquiryForm({ serviceName }: ServiceInquiryFormPr
     </div>
   );
 }
+

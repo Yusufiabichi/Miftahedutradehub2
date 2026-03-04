@@ -5,7 +5,7 @@ import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import BackToTop from '../../components/BackToTop';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface BlogPost {
   id: number | string;
@@ -44,8 +44,8 @@ export default function BlogDetailPage() {
         setNotFound(false);
 
         const [blogResponse, listResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/blogs/${id}`),
-          fetch(`${API_BASE_URL}/api/blogs`),
+          fetch(`/api/blogs/${id}`),
+          fetch("/api/blogs"),
         ]);
 
         if (blogResponse.status === 404) {
@@ -363,3 +363,4 @@ export default function BlogDetailPage() {
     </div>
   );
 }
+

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ServiceInquiry {
   id: number;
@@ -28,7 +28,7 @@ export default function ServiceInquiriesManager() {
   const fetchInquiries = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/enquiries/service`);
+      const response = await fetch("/api/enquiries/service");
 
       if (response.ok) {
         const data = await response.json();
@@ -47,7 +47,7 @@ export default function ServiceInquiriesManager() {
     if (!confirm('Are you sure you want to delete this inquiry?')) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/enquiries/service/${id}`, {
+      const response = await fetch(`/api/enquiries/service/${id}`, {
         method: 'DELETE',
       });
 
@@ -274,3 +274,4 @@ export default function ServiceInquiriesManager() {
     </div>
   );
 }
+

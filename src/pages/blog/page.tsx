@@ -6,7 +6,7 @@ import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import { useSEO, generateWebPageSchema } from '../../utils/seo';
 import BackToTop from '../../components/BackToTop';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ApiBlogRow {
   id: number | string;
@@ -45,7 +45,7 @@ export default function Blog() {
     const fetchBlogPosts = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/api/blogs`);
+        const response = await fetch("/api/blogs");
         if (!response.ok) {
           throw new Error('Failed to fetch blogs');
         }
@@ -312,3 +312,4 @@ export default function Blog() {
     </div>
   );
 }
+

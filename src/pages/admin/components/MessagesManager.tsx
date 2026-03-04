@@ -11,7 +11,7 @@ interface Message {
   created_at: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function MessagesManager() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -30,7 +30,7 @@ export default function MessagesManager() {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/enquiries/message`);
+      const response = await fetch("/api/enquiries/message");
       
       const data = await response.json();
       
@@ -57,7 +57,7 @@ export default function MessagesManager() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/enquiries/message/${id}`, {
+      const response = await fetch(`/api/enquiries/message/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ export default function MessagesManager() {
     if (!confirm('Are you sure you want to delete this message?')) return;
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/enquiries/message/${id}`, {
+      const response = await fetch(`/api/enquiries/message/${id}`, {
         method: 'DELETE',
       });
       
@@ -325,3 +325,4 @@ export default function MessagesManager() {
     </div>
   );
 }
+

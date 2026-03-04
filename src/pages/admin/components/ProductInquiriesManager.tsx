@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ProductInquiry {
   id: number;
@@ -25,7 +25,7 @@ export default function ProductInquiriesManager() {
   const fetchInquiries = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/enquiries/product`);
+      const response = await fetch("/api/enquiries/product");
 
       if (response.ok) {
         const data = await response.json();
@@ -44,7 +44,7 @@ export default function ProductInquiriesManager() {
     if (!confirm('Are you sure you want to delete this inquiry?')) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/enquiries/product/${id}`, {
+      const response = await fetch(`/api/enquiries/product/${id}`, {
         method: 'DELETE',
       });
 
@@ -255,3 +255,4 @@ export default function ProductInquiriesManager() {
     </div>
   );
 }
+

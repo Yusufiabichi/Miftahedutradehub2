@@ -10,7 +10,7 @@ import HeroSection from '../../components/feature/HeroSection';
 
 const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface Service {
   id: number;
@@ -97,7 +97,7 @@ export default function Home() {
 
   const fetchBlogPosts = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/blogs`);
+      const response = await fetch("/api/blogs");
       if (!response.ok) {
         throw new Error('Failed to fetch blogs');
       }
@@ -135,7 +135,7 @@ export default function Home() {
       setLoading(true);
       setProductsError('');
 
-      const response = await fetch(`${API_BASE_URL}/api/products`);
+      const response = await fetch("/api/products");
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
@@ -641,3 +641,4 @@ export default function Home() {
     </div>
   );
 }
+

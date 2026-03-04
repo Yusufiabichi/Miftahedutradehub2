@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface Stats {
   // services: number;
@@ -43,11 +43,11 @@ export default function OverviewTab() {
         serviceInquiriesRes,
         productInquiriesRes,
       ] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/products`),
-        fetch(`${API_BASE_URL}/api/blogs`),
-        fetch(`${API_BASE_URL}/api/enquiries/message`),
-        fetch(`${API_BASE_URL}/api/enquiries/service`),
-        fetch(`${API_BASE_URL}/api/enquiries/product`),
+        fetch("/api/products"),
+        fetch("/api/blogs"),
+        fetch("/api/enquiries/message"),
+        fetch("/api/enquiries/service"),
+        fetch("/api/enquiries/product"),
       ]);
 
       const [
@@ -181,3 +181,4 @@ export default function OverviewTab() {
     </div>
   );
 }
+
