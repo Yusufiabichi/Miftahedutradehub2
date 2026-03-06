@@ -26,6 +26,7 @@ interface ApiProduct {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const PRODUCTS_API_URL = `${API_BASE_URL || '/api'}/products`;
 
 const parseTextList = (value: string | null | undefined): string[] => {
   if (!value) return [];
@@ -193,8 +194,8 @@ export default function ProductsManager() {
     try {
       const isEditing = Boolean(editingProduct);
       const url = isEditing
-        ? `/api/products/${editingProduct!.id}`
-        : "/api/products";
+        ? `${PRODUCTS_API_URL}/${editingProduct!.id}`
+        : PRODUCTS_API_URL;
 
       const response = await fetch(url, {
         method: isEditing ? 'PUT' : 'POST',

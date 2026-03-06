@@ -1,98 +1,193 @@
 import pool from "../config/db.js";
 
+let schemaInfoPromise = null;
+
+const toStringArray = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(/\r?\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (value == null) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.map((item) => String(item).trim()).filter(Boolean)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const parseStoredArray = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item).trim()).filter(Boolean);
+      }
+    } catch {
+      return value
+        .split(/\r?\n|,/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+};
+
+const jsonValueOrNull = (arrayValue) => {
+  const list = toStringArray(arrayValue);
+  return list.length ? JSON.stringify(list) : null;
+};
+
+const textValueOrNull = (arrayValue) => {
+  const list = toStringArray(arrayValue);
+  return list.length ? list.join(", ") : null;
+};
+
+const getSchemaInfo = async () => {
+  if (!schemaInfoPromise) {
+    schemaInfoPromise = (async () => {
+      const [columnRows] = await pool.execute(
+        `SELECT COLUMN_NAME
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'products'`,
+      );
+
+      const [tableRows] = await pool.execute(
+        `SELECT TABLE_NAME
+         FROM information_schema.TABLES
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME IN ('product_images')`,
+      );
+
+      const columns = new Set(columnRows.map((row) => row.COLUMN_NAME));
+      const tables = new Set(tableRows.map((row) => row.TABLE_NAME));
+
+      return {
+        columns,
+        hasProductImagesTable: tables.has("product_images"),
+      };
+    })();
+  }
+
+  return schemaInfoPromise;
+};
+
+const resolveColumn = (columns, options) => options.find((column) => columns.has(column)) || null;
+
+const buildSelectQuery = (columns, whereClause = "") => {
+  const nameColumn = resolveColumn(columns, ["name", "product_name"]);
+  const featuresColumn = resolveColumn(columns, ["features", "key_features"]);
+  const specificationsColumn = columns.has("specifications") ? "specifications" : null;
+  const imagesColumn = columns.has("images") ? "images" : null;
+  const imageColumn = columns.has("image") ? "image" : null;
+  const createdAtColumn = columns.has("created_at") ? "created_at" : null;
+
+  return `
+    SELECT
+      id,
+      ${nameColumn ? `${nameColumn} AS product_name` : "NULL AS product_name"},
+      ${columns.has("category") ? "category" : "NULL AS category"},
+      ${columns.has("description") ? "description" : "NULL AS description"},
+      ${featuresColumn ? `${featuresColumn} AS key_features` : "NULL AS key_features"},
+      ${specificationsColumn ? `${specificationsColumn} AS specifications` : "NULL AS specifications"},
+      ${imagesColumn ? `${imagesColumn} AS images` : "NULL AS images"},
+      ${imageColumn ? `${imageColumn} AS image` : "NULL AS image"},
+      ${createdAtColumn ? `${createdAtColumn} AS created_at` : "NULL AS created_at"}
+    FROM products
+    ${whereClause}
+  `;
+};
+
+const mapProductRow = (row, imageMap = null) => {
+  const parsedImages = parseStoredArray(row.images);
+  const fallbackImagesFromMap = imageMap ? imageMap.get(row.id) || [] : [];
+  const singleImage = row.image ? [String(row.image)] : [];
+  const images = parsedImages.length ? parsedImages : (fallbackImagesFromMap.length ? fallbackImagesFromMap : singleImage);
+
+  return {
+    id: row.id,
+    product_name: row.product_name || "",
+    category: row.category || "",
+    description: row.description || "",
+    key_features: parseStoredArray(row.key_features).join(", "),
+    specifications: parseStoredArray(row.specifications).join(", "),
+    created_at: row.created_at,
+    images,
+  };
+};
+
+const loadProductImageMap = async () => {
+  const [rows] = await pool.execute(
+    `SELECT product_id, image_url
+     FROM product_images
+     ORDER BY id ASC`,
+  );
+
+  const imageMap = new Map();
+  for (const row of rows) {
+    if (!imageMap.has(row.product_id)) {
+      imageMap.set(row.product_id, []);
+    }
+    if (row.image_url) {
+      imageMap.get(row.product_id).push(String(row.image_url));
+    }
+  }
+  return imageMap;
+};
+
 export const getProducts = async (_req, res) => {
   try {
-    const [rows] = await pool.execute(
-      `SELECT 
-        p.id,
-        p.product_name,
-        p.category,
-        p.description,
-        p.key_features,
-        p.specifications,
-        p.created_at,
-        pi.image_url
-      FROM products p
-      LEFT JOIN product_images pi ON pi.product_id = p.id
-      ORDER BY p.id DESC, pi.id ASC`,
-    );
+    const { columns, hasProductImagesTable } = await getSchemaInfo();
+    const [rows] = await pool.execute(`${buildSelectQuery(columns, "ORDER BY id DESC")}`);
 
-    const productMap = new Map();
+    const shouldLoadImageTable = hasProductImagesTable && !columns.has("images");
+    const imageMap = shouldLoadImageTable ? await loadProductImageMap() : null;
 
-    for (const row of rows) {
-      if (!productMap.has(row.id)) {
-        productMap.set(row.id, {
-          id: row.id,
-          product_name: row.product_name,
-          category: row.category,
-          description: row.description,
-          key_features: row.key_features,
-          specifications: row.specifications,
-          created_at: row.created_at,
-          images: [],
-        });
-      }
-
-      if (row.image_url) {
-        productMap.get(row.id).images.push(row.image_url);
-      }
-    }
-
-    res.status(200).json(Array.from(productMap.values()));
+    return res.status(200).json(rows.map((row) => mapProductRow(row, imageMap)));
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch products", error: error.message });
+    return res.status(500).json({ message: "Failed to fetch products", error: error.message });
   }
 };
 
 export const getProductById = async (req, res) => {
   try {
-    const [rows] = await pool.execute(
-      `SELECT
-        p.id,
-        p.product_name,
-        p.category,
-        p.description,
-        p.key_features,
-        p.specifications,
-        p.created_at,
-        pi.image_url
-      FROM products p
-      LEFT JOIN product_images pi ON pi.product_id = p.id
-      WHERE p.id = ?
-      ORDER BY pi.id ASC`,
-      [req.params.id],
-    );
+    const { columns, hasProductImagesTable } = await getSchemaInfo();
+    const [rows] = await pool.execute(buildSelectQuery(columns, "WHERE id = ? LIMIT 1"), [req.params.id]);
 
     if (!rows.length) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const product = {
-      id: rows[0].id,
-      product_name: rows[0].product_name,
-      category: rows[0].category,
-      description: rows[0].description,
-      key_features: rows[0].key_features,
-      specifications: rows[0].specifications,
-      created_at: rows[0].created_at,
-      images: [],
-    };
-
-    for (const row of rows) {
-      if (row.image_url) {
-        product.images.push(row.image_url);
-      }
+    let imageMap = null;
+    if (hasProductImagesTable && !columns.has("images")) {
+      imageMap = await loadProductImageMap();
     }
 
-    return res.status(200).json(product);
+    return res.status(200).json(mapProductRow(rows[0], imageMap));
   } catch (error) {
     return res.status(500).json({ message: "Failed to fetch product", error: error.message });
   }
 };
 
 export const createProduct = async (req, res) => {
-  let connection;
-
   try {
     const {
       productName,
@@ -107,53 +202,50 @@ export const createProduct = async (req, res) => {
       return res.status(400).json({ message: "productName and category are required" });
     }
 
-    connection = await pool.getConnection();
-    await connection.beginTransaction();
+    const { columns } = await getSchemaInfo();
 
-    const [result] = await connection.execute(
-      `INSERT INTO products
-      (product_name, category, description, key_features, specifications)
-      VALUES (?, ?, ?, ?, ?)`,
-      [productName, category, description, keyFeatures, specifications],
-    );
-
-    const imageList = Array.isArray(images)
-      ? images
-      : images
-        ? [images]
-        : [];
-
-    if (imageList.length) {
-      const placeholders = imageList.map(() => "(?, ?)").join(", ");
-      const values = imageList.flatMap((imageUrl) => [result.insertId, imageUrl]);
-
-      await connection.execute(
-        `INSERT INTO product_images (product_id, image_url) VALUES ${placeholders}`,
-        values,
-      );
+    const nameColumn = resolveColumn(columns, ["name", "product_name"]);
+    if (!nameColumn) {
+      return res.status(500).json({ message: "Products table missing name/product_name column" });
     }
 
-    await connection.commit();
+    const payload = new Map();
+    payload.set(nameColumn, productName);
+    if (columns.has("category")) payload.set("category", category);
+    if (columns.has("description")) payload.set("description", description || "");
+    if (columns.has("features")) payload.set("features", jsonValueOrNull(keyFeatures));
+    if (columns.has("key_features")) payload.set("key_features", textValueOrNull(keyFeatures));
+    if (columns.has("specifications")) {
+      payload.set(
+        "specifications",
+        columns.has("features") ? jsonValueOrNull(specifications) : textValueOrNull(specifications),
+      );
+    }
+    if (columns.has("images")) payload.set("images", jsonValueOrNull(images));
+    if (columns.has("image")) {
+      const list = toStringArray(images);
+      payload.set("image", list[0] || null);
+    }
+
+    const columnsList = Array.from(payload.keys());
+    const values = Array.from(payload.values());
+    const placeholders = columnsList.map(() => "?").join(", ");
+
+    const [result] = await pool.execute(
+      `INSERT INTO products (${columnsList.join(", ")}) VALUES (${placeholders})`,
+      values,
+    );
 
     return res.status(201).json({
       message: "Product created successfully",
       id: result.insertId,
     });
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
-    }
     return res.status(500).json({ message: "Failed to create product", error: error.message });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
 export const updateProduct = async (req, res) => {
-  let connection;
-
   try {
     const {
       productName,
@@ -161,89 +253,72 @@ export const updateProduct = async (req, res) => {
       description = null,
       keyFeatures = null,
       specifications = null,
-      images,
+      images = null,
     } = req.body;
 
     if (!productName || !category) {
       return res.status(400).json({ message: "productName and category are required" });
     }
 
-    connection = await pool.getConnection();
-    await connection.beginTransaction();
+    const { columns } = await getSchemaInfo();
 
-    const [result] = await connection.execute(
-      `UPDATE products
-      SET product_name = ?, category = ?, description = ?, key_features = ?, specifications = ?
-      WHERE id = ?`,
-      [productName, category, description, keyFeatures, specifications, req.params.id],
+    const nameColumn = resolveColumn(columns, ["name", "product_name"]);
+    if (!nameColumn) {
+      return res.status(500).json({ message: "Products table missing name/product_name column" });
+    }
+
+    const updateMap = new Map();
+    updateMap.set(nameColumn, productName);
+    if (columns.has("category")) updateMap.set("category", category);
+    if (columns.has("description")) updateMap.set("description", description || "");
+    if (columns.has("features")) updateMap.set("features", jsonValueOrNull(keyFeatures));
+    if (columns.has("key_features")) updateMap.set("key_features", textValueOrNull(keyFeatures));
+    if (columns.has("specifications")) {
+      updateMap.set(
+        "specifications",
+        columns.has("features") ? jsonValueOrNull(specifications) : textValueOrNull(specifications),
+      );
+    }
+    if (columns.has("images")) updateMap.set("images", jsonValueOrNull(images));
+    if (columns.has("image")) {
+      const list = toStringArray(images);
+      updateMap.set("image", list[0] || null);
+    }
+
+    const setClause = Array.from(updateMap.keys()).map((column) => `${column} = ?`).join(", ");
+    const values = [...Array.from(updateMap.values()), req.params.id];
+
+    const [result] = await pool.execute(
+      `UPDATE products SET ${setClause} WHERE id = ?`,
+      values,
     );
 
     if (!result.affectedRows) {
-      await connection.rollback();
       return res.status(404).json({ message: "Product not found" });
     }
 
-    if (images !== undefined) {
-      await connection.execute("DELETE FROM product_images WHERE product_id = ?", [req.params.id]);
-
-      const imageList = Array.isArray(images)
-        ? images
-        : images
-          ? [images]
-          : [];
-
-      if (imageList.length) {
-        const placeholders = imageList.map(() => "(?, ?)").join(", ");
-        const values = imageList.flatMap((imageUrl) => [req.params.id, imageUrl]);
-
-        await connection.execute(
-          `INSERT INTO product_images (product_id, image_url) VALUES ${placeholders}`,
-          values,
-        );
-      }
-    }
-
-    await connection.commit();
-
     return res.status(200).json({ message: "Product updated successfully" });
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
-    }
     return res.status(500).json({ message: "Failed to update product", error: error.message });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
 export const deleteProduct = async (req, res) => {
-  let connection;
-
   try {
-    connection = await pool.getConnection();
-    await connection.beginTransaction();
+    const { hasProductImagesTable } = await getSchemaInfo();
 
-    await connection.execute("DELETE FROM product_images WHERE product_id = ?", [req.params.id]);
-    const [result] = await connection.execute("DELETE FROM products WHERE id = ?", [req.params.id]);
+    if (hasProductImagesTable) {
+      await pool.execute("DELETE FROM product_images WHERE product_id = ?", [req.params.id]);
+    }
+
+    const [result] = await pool.execute("DELETE FROM products WHERE id = ?", [req.params.id]);
 
     if (!result.affectedRows) {
-      await connection.rollback();
       return res.status(404).json({ message: "Product not found" });
     }
 
-    await connection.commit();
-
     return res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
-    if (connection) {
-      await connection.rollback();
-    }
     return res.status(500).json({ message: "Failed to delete product", error: error.message });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
