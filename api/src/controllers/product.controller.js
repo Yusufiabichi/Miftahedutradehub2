@@ -63,26 +63,21 @@ const textValueOrNull = (arrayValue) => {
 const getSchemaInfo = async () => {
   if (!schemaInfoPromise) {
     schemaInfoPromise = (async () => {
-      const [columnRows] = await pool.execute(
-        `SELECT COLUMN_NAME
-         FROM information_schema.COLUMNS
-         WHERE TABLE_SCHEMA = DATABASE()
-           AND TABLE_NAME = 'products'`,
-      );
+      // Avoid information_schema because many shared hosts restrict it.
+      const [, fields] = await pool.execute("SELECT * FROM products LIMIT 0");
+      const columns = new Set(fields.map((field) => field.name));
 
-      const [tableRows] = await pool.execute(
-        `SELECT TABLE_NAME
-         FROM information_schema.TABLES
-         WHERE TABLE_SCHEMA = DATABASE()
-           AND TABLE_NAME IN ('product_images')`,
-      );
-
-      const columns = new Set(columnRows.map((row) => row.COLUMN_NAME));
-      const tables = new Set(tableRows.map((row) => row.TABLE_NAME));
+      let hasProductImagesTable = false;
+      try {
+        await pool.execute("SELECT 1 FROM product_images LIMIT 1");
+        hasProductImagesTable = true;
+      } catch {
+        hasProductImagesTable = false;
+      }
 
       return {
         columns,
-        hasProductImagesTable: tables.has("product_images"),
+        hasProductImagesTable,
       };
     })();
   }
