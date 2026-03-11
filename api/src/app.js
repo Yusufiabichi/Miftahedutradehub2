@@ -6,6 +6,10 @@ import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js
 import productRoutes from "./routes/product.routes.js";
 import serviceRoutes from "./routes/service.routes.js";
 
+// Service Enquiry submit
+// Product Enquiry submit
+// Message submit
+
 const app = express();
 
 const normalizeOrigin = (origin) => origin.trim().toLowerCase().replace(/\/+$/, "");
