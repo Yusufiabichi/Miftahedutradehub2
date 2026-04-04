@@ -106,7 +106,7 @@ export const generateOrganizationSchema = () => ({
   },
   contactPoint: {
     '@type': 'ContactPoint',
-    telephone: '+880-1234-567890',
+    telephone: '+234-800-123-4567',
     contactType: 'customer service',
     areaServed: 'NG',
     availableLanguage: ['en', 'ha']
