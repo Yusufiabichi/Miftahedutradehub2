@@ -81,7 +81,7 @@ export default function ContactPage() {
     {
       icon: 'ri-phone-line',
       title: 'Call Us',
-      details: ['+234 816 241 1941', '+234 803 456 7890'],
+      details: ['+8613259865980', '+234 816 241 1941'],
       color: 'from-green-500 to-green-600'
     },
     {

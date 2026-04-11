@@ -8,8 +8,8 @@ export default function Footer() {
     { path: '/', label: 'Home' },
     { path: '/about', label: 'About Us' },
     { path: '/services', label: 'Services' },
-    { path: '/testimonials', label: 'Testimonials' },
-    { path: '/faq', label: 'FAQ' },
+    // { path: '/testimonials', label: 'Testimonials' },
+    // { path: '/faq', label: 'FAQ' },
     { path: '/contact', label: 'Contact' },
   ];
 
@@ -95,7 +95,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center space-x-3">
                 <i className="ri-phone-line text-yellow-400 text-lg"></i>
-                <span className="text-blue-100 text-sm">+234 803 456 7890</span>
+                <span className="text-blue-100 text-sm">+8613259865980, +234 816 241 1941</span>
               </li>
               <li className="flex items-center space-x-3">
                 <i className="ri-mail-line text-yellow-400 text-lg"></i>
