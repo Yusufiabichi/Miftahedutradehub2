@@ -49,7 +49,7 @@ export default function Footer() {
               <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 hover:bg-yellow-400 rounded-lg flex items-center justify-center transition-all cursor-pointer">
                 <i className="ri-linkedin-fill text-xl"></i>
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 hover:bg-yellow-400 rounded-lg flex items-center justify-center transition-all cursor-pointer">
+              <a href="https://instagram.com/methl_ng" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 hover:bg-yellow-400 rounded-lg flex items-center justify-center transition-all cursor-pointer">
                 <i className="ri-instagram-fill text-xl"></i>
               </a>
             </div>
