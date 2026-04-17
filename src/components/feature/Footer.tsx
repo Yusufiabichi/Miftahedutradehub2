@@ -116,13 +116,14 @@ export default function Footer() {
             <p className="text-blue-200 text-sm">
               © {currentYear} Miftah Edu-Trade Hub Ltd. All rights reserved.
             </p>
+            Developed by 
             <a 
               href="https://yusufias-portfolio.vercel.app" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-blue-200 hover:text-yellow-400 text-sm transition-colors"
             >
-              Developed by Yusufia Dev
+              Yusufia Dev
             </a>
           </div>
         </div>
