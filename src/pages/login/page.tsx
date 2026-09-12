@@ -1,9 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { startSessionRefresh } from '../../utils/auth';
 
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,11 +16,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           email,
@@ -33,23 +30,12 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error_description || 'Login failed');
+        throw new Error(data.message || 'Login failed');
       }
 
-      // Store tokens and user info
-      localStorage.setItem('supabase_access_token', data.access_token);
-      localStorage.setItem('supabase_refresh_token', data.refresh_token);
-      localStorage.setItem('supabase_user', JSON.stringify(data.user));
-      
-      // Store token expiry time (tokens typically expire after 1 hour)
-      const expiresIn = data.expires_in || 3600;
-      const expiryTime = Date.now() + (expiresIn * 1000);
-      localStorage.setItem('token_expiry_time', expiryTime.toString());
+      localStorage.setItem('access_token', data.token);
+      localStorage.setItem('auth_user', JSON.stringify(data.user));
 
-      // Start session refresh
-      startSessionRefresh();
-
-      // Redirect to admin
       navigate('/admin');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -148,11 +134,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Secured by Supabase Authentication. If you don't have an account, please contact the administrator.
-          </p>
-        </div> */}
       </div>
     </div>
   );

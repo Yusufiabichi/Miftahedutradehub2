@@ -24,8 +24,6 @@ interface ApiProduct {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
 
 const parseTextList = (value: string | null | undefined): string[] => {
   if (!value) return [];
@@ -124,25 +122,19 @@ export default function ProductsManager() {
   };
 
   const uploadImageToStorage = async (file: File): Promise<string> => {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      throw new Error('Missing Supabase storage configuration');
-    }
-
     const token = getAccessToken();
     if (!token) {
       throw new Error('Session expired. Please log in again.');
     }
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-
-    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/images/${fileName}`, {
+    const uploadData = new FormData();
+    uploadData.append('image', file);
+    const response = await fetch(`${API_BASE_URL || ''}/api/products/upload`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'apikey': SUPABASE_ANON_KEY,
       },
-      body: file,
+      body: uploadData,
     });
 
     if (!response.ok) {
@@ -150,7 +142,8 @@ export default function ProductsManager() {
       throw new Error(errorData.message || 'Failed to upload image');
     }
 
-    return `${SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
+    const data = await response.json();
+    return `${API_BASE_URL || ''}${data.url}`;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

@@ -11,6 +11,7 @@ import {
   getServiceEnquiries,
   updateContactMessageStatus,
 } from "../controllers/enquiry.controller.js";
+import { requireAuth } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
@@ -18,16 +19,16 @@ router.get("/", (_req, res) => {
   res.status(200).json({ message: "List enquiries" });
 });
 
-router.get("/service", getServiceEnquiries);
+router.get("/service", requireAuth, getServiceEnquiries);
 router.post("/service", createServiceEnquiry);
-router.get("/product", getProductEnquiries);
+router.get("/product", requireAuth, getProductEnquiries);
 router.post("/product", createProductEnquiry);
-router.delete("/product/:id", deleteProductEnquiry);
-router.delete("/service/:id", deleteServiceEnquiry);
-router.get("/message", getContactMessages);
+router.delete("/product/:id", requireAuth, deleteProductEnquiry);
+router.delete("/service/:id", requireAuth, deleteServiceEnquiry);
+router.get("/message", requireAuth, getContactMessages);
 router.post("/message", createContactMessage);
-router.put("/message/:id", updateContactMessageStatus);
-router.delete("/message/:id", deleteContactMessage);
+router.put("/message/:id", requireAuth, updateContactMessageStatus);
+router.delete("/message/:id", requireAuth, deleteContactMessage);
 
 router.get("/:id", (req, res) => {
   res.status(200).json({ message: "Get enquiry", id: req.params.id });

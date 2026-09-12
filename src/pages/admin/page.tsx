@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import OverviewTab from './components/OverviewTab';
-// import ServicesManager from './components/ServicesManager';
 import BlogsManager from './components/BlogsManager';
 import MessagesManager from './components/MessagesManager';
-// import GalleryManager from './components/GalleryManager';
 import ProductsManager from './components/ProductsManager';
 import ServiceInquiriesManager from './components/ServiceInquiriesManager';
 import ProductInquiriesManager from './components/ProductInquiriesManager';
-// import TestimonialsManager from './components/TestimonialsManager';
-import { logout, getUser, ensureValidSession, startSessionRefresh, stopSessionRefresh } from '../../utils/auth';
+import { logout, getUser, ensureValidSession } from '../../utils/auth';
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -20,13 +17,6 @@ export default function AdminPage() {
     const currentUser = getUser();
     setUser(currentUser);
     
-    // Start automatic session refresh
-    startSessionRefresh();
-    
-    // Cleanup on unmount
-    return () => {
-      stopSessionRefresh();
-    };
   }, []);
 
   // Ensure valid session when switching tabs
@@ -38,8 +28,7 @@ export default function AdminPage() {
   };
 
   const handleLogout = async () => {
-    stopSessionRefresh();
-    await logout();
+    logout();
     navigate('/login');
   };
 
@@ -71,11 +60,8 @@ export default function AdminPage() {
             <nav className="flex overflow-x-auto">
               {[
                 { id: 'overview', label: 'Overview', icon: 'ri-dashboard-line' },
-                // { id: 'services', label: 'Services', icon: 'ri-service-line' },
                 { id: 'products', label: 'Products', icon: 'ri-shopping-bag-line' },
-                // { id: 'gallery', label: 'Gallery', icon: 'ri-gallery-line' },
                 { id: 'blogs', label: 'Blogs', icon: 'ri-article-line' },
-                // { id: 'testimonials', label: 'Testimonials', icon: 'ri-chat-quote-line' },
                 { id: 'messages', label: 'Messages', icon: 'ri-mail-line' },
                 { id: 'inquiries', label: 'Service Inquiries', icon: 'ri-question-answer-line' },
                 { id: 'product-inquiries', label: 'Product Inquiries', icon: 'ri-questionnaire-line' },
@@ -99,11 +85,8 @@ export default function AdminPage() {
           {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'overview' && <OverviewTab />}
-            {/* {activeTab === 'services' && <ServicesManager />} */}
             {activeTab === 'products' && <ProductsManager />}
-            {/* {activeTab === 'gallery' && <GalleryManager />} */}
             {activeTab === 'blogs' && <BlogsManager />}
-            {/* {activeTab === 'testimonials' && <TestimonialsManager />} */}
             {activeTab === 'messages' && <MessagesManager />}
             {activeTab === 'inquiries' && <ServiceInquiriesManager />}
             {activeTab === 'product-inquiries' && <ProductInquiriesManager />}

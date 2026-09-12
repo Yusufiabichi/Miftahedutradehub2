@@ -8,4 +8,8 @@ export default {
       extend: {},
     },
     plugins: [],
+    fontFamily: {
+    display: ['Fraunces', 'serif'],
+    sans: ['Inter', 'sans-serif'],
   }
+}

@@ -1,6 +1,6 @@
 
 export default function WhatsAppButton() {
-  const phoneNumber = '234 816 241 1941';
+  const phoneNumber = '+2348162411941';
   const message = 'Hello! I would like to know more about your services.';
   
   const handleClick = () => {

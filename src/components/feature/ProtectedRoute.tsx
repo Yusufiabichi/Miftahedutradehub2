@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { isAuthenticated, refreshSession } from '../../utils/auth';
+import { ensureValidSession } from '../../utils/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,14 +12,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (isAuthenticated()) {
-        setAuthenticated(true);
-        setChecking(false);
-      } else {
-        const refreshed = await refreshSession();
-        setAuthenticated(refreshed);
-        setChecking(false);
-      }
+      setAuthenticated(await ensureValidSession());
+      setChecking(false);
     };
 
     checkAuth();

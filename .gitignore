@@ -1,4 +1,5 @@
 node_modules/
 dist/   
 .env
+api/uploads/
 .DS_Store

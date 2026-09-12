@@ -8,8 +8,6 @@ import { useSEO, generateOrganizationSchema, generateWebPageSchema } from '../..
 import BackToTop from '../../components/BackToTop';
 import HeroSection from '../../components/feature/HeroSection';
 
-const SUPABASE_URL = import.meta.env.VITE_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface Service {
@@ -47,15 +45,6 @@ interface BlogPost {
   category: string;
   created_at: string;
 }
-
-// interface Testimonial {
-//   id: number;
-//   name: string;
-//   role: string;
-//   text: string;
-//   rating: number;
-//   image: string;
-// }
 
 export default function Home() {
   // SEO

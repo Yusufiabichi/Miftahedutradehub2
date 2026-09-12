@@ -4,13 +4,17 @@ import blogRoutes from "./routes/blog.routes.js";
 import enquiryRoutes from "./routes/enquiry.routes.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
 import productRoutes from "./routes/product.routes.js";
-import serviceRoutes from "./routes/service.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Service Enquiry submit
 // Product Enquiry submit
 // Message submit
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const normalizeOrigin = (origin) => origin.trim().toLowerCase().replace(/\/+$/, "");
 
@@ -41,14 +45,15 @@ app.use(
 );
 
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.get("/", (_req, res) => {
   res.status(200).json({ message: "API is running" });
 });
 
 app.use("/api/blogs", blogRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/services", serviceRoutes);
 app.use("/api/enquiries", enquiryRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
