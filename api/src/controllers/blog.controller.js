@@ -1,5 +1,7 @@
 import pool from "../config/db.js";
 
+const DEFAULT_BLOG_IMAGE = "https://placehold.co/1200x630?text=Miftah+Edu-Trade+Hub";
+
 const parseTags = (value) => {
   if (!value) return [];
 
@@ -109,14 +111,14 @@ export const createBlog = async (req, res) => {
       content,
       author,
       category,
-      image,
+      image = DEFAULT_BLOG_IMAGE,
       tags = [],
       read_time = null,
-      status,
+      status = "Published",
       is_published = false,
     } = req.body;
 
-    if (!title || !excerpt || !content || !author || !category || !image) {
+    if (!title || !excerpt || !content || !author || !category) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -174,14 +176,14 @@ export const updateBlog = async (req, res) => {
       content,
       author,
       category,
-      image,
+      image = DEFAULT_BLOG_IMAGE,
       tags = [],
       read_time = null,
-      status,
+      status = "Published",
       is_published = false,
     } = req.body;
 
-    if (!title || !excerpt || !content || !author || !category || !image) {
+    if (!title || !excerpt || !content || !author || !category) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 

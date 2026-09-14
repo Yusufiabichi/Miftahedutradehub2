@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from '../../../utils/auth';
 
 interface Message {
   id: string;
@@ -30,7 +31,9 @@ export default function MessagesManager() {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch("/api/enquiries/message");
+      const response = await fetch("/api/enquiries/message", {
+        headers: getAuthHeaders(),
+      });
       
       const data = await response.json();
       
@@ -61,6 +64,7 @@ export default function MessagesManager() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -90,6 +94,7 @@ export default function MessagesManager() {
     try {
       const response = await fetch(`/api/enquiries/message/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
       
       if (!response.ok) {

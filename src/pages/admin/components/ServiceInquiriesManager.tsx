@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from '../../../utils/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -28,7 +29,9 @@ export default function ServiceInquiriesManager() {
   const fetchInquiries = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/enquiries/service");
+      const response = await fetch("/api/enquiries/service", {
+        headers: getAuthHeaders(),
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -49,6 +52,7 @@ export default function ServiceInquiriesManager() {
     try {
       const response = await fetch(`/api/enquiries/service/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {

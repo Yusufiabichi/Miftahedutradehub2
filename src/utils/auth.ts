@@ -2,7 +2,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const ACCESS_TOKEN_KEY = 'access_token';
 const USER_KEY = 'auth_user';
 
-const getAuthHeaders = (): HeadersInit => {
+export const getAuthHeaders = (): HeadersInit => {
   const token = getAccessToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 };

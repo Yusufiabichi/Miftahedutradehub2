@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from '../../../utils/auth';
 
 interface Blog {
   id: string;
@@ -17,6 +18,14 @@ interface Blog {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const DEFAULT_BLOG_IMAGE = 'https://placehold.co/1200x630?text=Miftah+Edu-Trade+Hub';
+const BLOG_CATEGORIES = [
+  'Company News',
+  'International Trade',
+  'Education & Scholarships',
+  'Travel & Visa',
+  'Business Tips',
+];
 
 export default function BlogsManager() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -55,7 +64,7 @@ export default function BlogsManager() {
       content: formData.get('content') as string,
       author: formData.get('author') as string,
       category: formData.get('category') as string,
-      image: formData.get('image') as string,
+      image: editingBlog?.image || DEFAULT_BLOG_IMAGE,
       tags: (formData.get('tags') as string).split(',').map(tag => tag.trim()),
       read_time: (() => {
         const raw = String(formData.get('read_time') || '').trim();
@@ -63,7 +72,7 @@ export default function BlogsManager() {
         const match = raw.match(/\d+/);
         return match ? match[0] : raw;
       })(),
-      status: (formData.get('status') as string) || 'Draft',
+      status: (formData.get('status') as string) || 'Published',
     };
 
     try {
@@ -74,6 +83,7 @@ export default function BlogsManager() {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
           },
           body: JSON.stringify(blogData),
         });
@@ -82,6 +92,7 @@ export default function BlogsManager() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...getAuthHeaders(),
           },
           body: JSON.stringify(blogData),
         });
@@ -108,6 +119,7 @@ export default function BlogsManager() {
     try {
       await fetch(`/api/blogs/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
       fetchBlogs();
     } catch (error) {
@@ -198,26 +210,22 @@ export default function BlogsManager() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <input
-                    type="text"
+                  <select
                     name="category"
-                    defaultValue={editingBlog?.category}
+                    defaultValue={editingBlog?.category || BLOG_CATEGORIES[0]}
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                  />
+                  >
+                    {BLOG_CATEGORIES.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Featured Image URL</label>
-                <input
-                  type="url"
-                  name="image"
-                  defaultValue={editingBlog?.image}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
-                />
-              </div>
+              <p className="text-sm text-gray-500">
+                A default cover image will be used when no image is provided.
+              </p>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -246,7 +254,7 @@ export default function BlogsManager() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select
                   name="status"
-                  defaultValue={editingBlog?.status || (editingBlog?.is_published ? 'Published' : 'Draft')}
+                  defaultValue={editingBlog?.status || (editingBlog?.is_published ? 'Published' : 'Published')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent"
                 >
                   <option value="Published">Published</option>

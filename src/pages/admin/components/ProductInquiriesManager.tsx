@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from '../../../utils/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -25,7 +26,9 @@ export default function ProductInquiriesManager() {
   const fetchInquiries = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/enquiries/product");
+      const response = await fetch("/api/enquiries/product", {
+        headers: getAuthHeaders(),
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -46,6 +49,7 @@ export default function ProductInquiriesManager() {
     try {
       const response = await fetch(`/api/enquiries/product/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAccessToken } from '../../../utils/auth';
+import { getAccessToken, getAuthHeaders } from '../../../utils/auth';
 
 interface Product {
   id: number;
@@ -99,6 +99,7 @@ export default function ProductsManager() {
     try {
       const response = await fetch(`/api/products/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -193,6 +194,7 @@ export default function ProductsManager() {
         method: isEditing ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           productName: name,

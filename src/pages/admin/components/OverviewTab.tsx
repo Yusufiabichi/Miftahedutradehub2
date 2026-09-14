@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from '../../../utils/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -45,9 +46,9 @@ export default function OverviewTab() {
       ] = await Promise.all([
         fetch("/api/products"),
         fetch("/api/blogs"),
-        fetch("/api/enquiries/message"),
-        fetch("/api/enquiries/service"),
-        fetch("/api/enquiries/product"),
+        fetch("/api/enquiries/message", { headers: getAuthHeaders() }),
+        fetch("/api/enquiries/service", { headers: getAuthHeaders() }),
+        fetch("/api/enquiries/product", { headers: getAuthHeaders() }),
       ]);
 
       const [

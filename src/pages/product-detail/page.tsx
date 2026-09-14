@@ -4,7 +4,7 @@ import Header from '../../components/feature/Header';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 interface ApiProduct {
   id: number;
@@ -142,7 +142,7 @@ export default function ProductDetail() {
     };
 
     try {
-      const response = await fetch("/api/enquiries/product", {
+      const response = await fetch(`${API_BASE_URL}/api/enquiries/product`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

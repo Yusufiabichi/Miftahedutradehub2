@@ -1,11 +1,15 @@
 import pool from "../config/db.js";
 
 const getMessagesColumnMap = async () => {
-  const [columnRows] = await pool.execute("SHOW COLUMNS FROM messages");
+  const tableName = await resolveMessagesTable();
+  if (!tableName) return null;
+
+  const [columnRows] = await pool.execute(`SHOW COLUMNS FROM \`${tableName}\``);
   const availableColumns = new Set(columnRows.map((col) => col.Field));
   const pickColumn = (candidates) => candidates.find((col) => availableColumns.has(col)) || null;
 
   return {
+    tableName,
     id: pickColumn(["id", "message_id"]),
     name: pickColumn(["name", "fullname", "full_name"]),
     email: pickColumn(["email", "customer_email"]),
@@ -15,6 +19,38 @@ const getMessagesColumnMap = async () => {
     status: pickColumn(["status"]),
     created_at: pickColumn(["created_at", "date_created"]),
   };
+};
+
+const resolveMessagesTable = async () => {
+  const tableCandidates = ["messages", "contact_messages"];
+  const placeholders = tableCandidates.map(() => "?").join(", ");
+  const [rows] = await pool.execute(
+    `SELECT table_name
+     FROM information_schema.tables
+     WHERE table_schema = DATABASE()
+       AND table_name IN (${placeholders})
+     ORDER BY FIELD(table_name, ${placeholders})
+     LIMIT 1`,
+    [...tableCandidates, ...tableCandidates],
+  );
+
+  return rows[0]?.table_name || rows[0]?.TABLE_NAME || null;
+};
+
+const resolveServiceEnquiryTable = async () => {
+  const tableCandidates = ["service_enquiries", "service_inquiries"];
+  const placeholders = tableCandidates.map(() => "?").join(", ");
+  const [rows] = await pool.execute(
+    `SELECT table_name
+     FROM information_schema.tables
+     WHERE table_schema = DATABASE()
+       AND table_name IN (${placeholders})
+     ORDER BY FIELD(table_name, ${placeholders})
+     LIMIT 1`,
+    [...tableCandidates, ...tableCandidates],
+  );
+
+  return rows[0]?.table_name || rows[0]?.TABLE_NAME || null;
 };
 
 const resolveProductEnquiryTable = async () => {
@@ -107,19 +143,45 @@ export const getProductEnquiries = async (_req, res) => {
 
 export const getServiceEnquiries = async (_req, res) => {
   try {
+    const tableName = await resolveServiceEnquiryTable();
+    if (!tableName) {
+      return res.status(500).json({ message: "Service enquiries table not found" });
+    }
+
+    const [columnRows] = await pool.execute(`SHOW COLUMNS FROM \`${tableName}\``);
+    const availableColumns = new Set(columnRows.map((col) => col.Field));
+    const pickColumn = (candidates) => candidates.find((col) => availableColumns.has(col)) || null;
+    const columnMap = {
+      id: pickColumn(["id", "enquiry_id", "inquiry_id"]),
+      service_name: pickColumn(["service_name", "service", "service_title"]),
+      name: pickColumn(["name", "fullname", "customer_name", "full_name"]),
+      email: pickColumn(["email", "customer_email"]),
+      phone: pickColumn(["phone", "phone_number", "customer_phone"]),
+      budget_range: pickColumn(["budget_range", "budget"]),
+      timeline: pickColumn(["timeline", "expected_timeline"]),
+      message: pickColumn(["message", "inquiry_message", "details"]),
+      created_at: pickColumn(["created_at", "date_created", "createdon", "created_on"]),
+    };
+
+    if (!columnMap.id || !columnMap.service_name || !columnMap.name || !columnMap.email || !columnMap.phone || !columnMap.message) {
+      return res.status(500).json({ message: `${tableName} table is missing required columns` });
+    }
+
+    const select = (column, alias) => column ? `\`${column}\` AS ${alias}` : `NULL AS ${alias}`;
+    const orderBy = columnMap.created_at ? `\`${columnMap.created_at}\` DESC` : `\`${columnMap.id}\` DESC`;
     const [rows] = await pool.execute(
       `SELECT
-        id,
-        service AS service_name,
-        fullname AS name,
-        email,
-        phone,
-        budget_range,
-        expected_timeline,
-        message,
-        created_at
-      FROM service_enquiries
-      ORDER BY created_at DESC`,
+        \`${columnMap.id}\` AS id,
+        \`${columnMap.service_name}\` AS service_name,
+        \`${columnMap.name}\` AS name,
+        \`${columnMap.email}\` AS email,
+        \`${columnMap.phone}\` AS phone,
+        ${select(columnMap.budget_range, "budget_range")},
+        ${select(columnMap.timeline, "timeline")},
+        \`${columnMap.message}\` AS message,
+        ${select(columnMap.created_at, "created_at")}
+      FROM \`${tableName}\`
+      ORDER BY ${orderBy}`,
     );
 
     return res.status(200).json(rows);
@@ -148,7 +210,12 @@ export const createServiceEnquiry = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const [columnRows] = await pool.execute("SHOW COLUMNS FROM service_enquiries");
+    const tableName = await resolveServiceEnquiryTable();
+    if (!tableName) {
+      return res.status(500).json({ message: "Service enquiries table not found" });
+    }
+
+    const [columnRows] = await pool.execute(`SHOW COLUMNS FROM \`${tableName}\``);
     const availableColumns = new Set(columnRows.map((col) => col.Field));
 
     const pickColumn = (candidates) => candidates.find((col) => availableColumns.has(col)) || null;
@@ -190,8 +257,8 @@ export const createServiceEnquiry = async (req, res) => {
     const placeholders = insertColumns.map(() => "?").join(", ");
 
     const [result] = await pool.execute(
-      `INSERT INTO service_enquiries
-      (${insertColumns.join(", ")})
+      `INSERT INTO \`${tableName}\`
+      (${insertColumns.map((column) => `\`${column}\``).join(", ")})
       VALUES (${placeholders})`,
       values,
     );
@@ -295,8 +362,12 @@ export const createContactMessage = async (req, res) => {
 
     const columnMap = await getMessagesColumnMap();
 
+    if (!columnMap) {
+      return res.status(500).json({ message: "Contact messages table not found" });
+    }
+
     if (!columnMap.name || !columnMap.email || !columnMap.subject || !columnMap.message) {
-      return res.status(500).json({ message: "messages table is missing required columns" });
+      return res.status(500).json({ message: `${columnMap.tableName} table is missing required columns` });
     }
 
     const payloadByColumn = {
@@ -316,7 +387,7 @@ export const createContactMessage = async (req, res) => {
     const placeholders = insertColumns.map(() => "?").join(", ");
 
     const [result] = await pool.execute(
-      `INSERT INTO messages (${insertColumns.join(", ")}) VALUES (${placeholders})`,
+      `INSERT INTO \`${columnMap.tableName}\` (${insertColumns.map((column) => `\`${column}\``).join(", ")}) VALUES (${placeholders})`,
       values,
     );
 
