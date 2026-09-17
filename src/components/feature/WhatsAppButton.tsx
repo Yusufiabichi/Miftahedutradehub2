@@ -1,7 +1,7 @@
 
 export default function WhatsAppButton() {
   const phoneNumber = '+2348162411941';
-  const message = 'Hello! I would like to know more about your services.';
+  const message = 'Hello! I would like to know more about your services. My name is: ';
   
   const handleClick = () => {
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
