@@ -24,8 +24,6 @@ interface ApiProduct {
   images: string[] | null;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 export default function ProductsPage() {
   // SEO
   useSEO({

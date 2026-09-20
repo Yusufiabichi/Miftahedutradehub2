@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAccessToken, getAuthHeaders } from '../../../utils/auth';
+import { API_BASE_URL } from '../../../utils/api';
 
 interface Product {
   id: number;
@@ -22,8 +23,6 @@ interface ApiProduct {
   specifications: string | null;
   images: string[] | null;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const parseTextList = (value: string | null | undefined): string[] => {
   if (!value) return [];

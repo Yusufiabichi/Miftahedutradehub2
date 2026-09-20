@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAuthHeaders } from '../../../utils/auth';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 interface Stats {
   // services: number;
   products: number;

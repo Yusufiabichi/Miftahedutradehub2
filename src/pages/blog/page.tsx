@@ -6,8 +6,6 @@ import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import { useSEO, generateWebPageSchema } from '../../utils/seo';
 import BackToTop from '../../components/BackToTop';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 interface ApiBlogRow {
   id: number | string;
   title: string;

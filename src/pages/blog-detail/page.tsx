@@ -5,8 +5,6 @@ import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
 import BackToTop from '../../components/BackToTop';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 interface BlogPost {
   id: number | string;
   title: string;

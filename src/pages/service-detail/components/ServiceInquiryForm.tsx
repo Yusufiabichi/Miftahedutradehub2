@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { servicesData } from '../../../mocks/servicesData';
+import { API_BASE_URL } from '../../../utils/api';
 
 interface ServiceInquiryFormProps {
   serviceName: string;
 }
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export default function ServiceInquiryForm({ serviceName }: ServiceInquiryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);

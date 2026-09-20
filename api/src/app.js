@@ -1,3 +1,4 @@
+import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import blogRoutes from "./routes/blog.routes.js";
@@ -18,7 +19,7 @@ const __dirname = path.dirname(__filename);
 
 const normalizeOrigin = (origin) => origin.trim().toLowerCase().replace(/\/+$/, "");
 
-const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000,http://localhost:5173")
+const allowedOrigins = (process.env.CORS_ORIGINS || "")
   .split(",")
   .map((origin) => normalizeOrigin(origin))
   .filter(Boolean);
@@ -33,7 +34,7 @@ app.use(
 
       const normalizedOrigin = normalizeOrigin(origin);
 
-      if (allowedOrigins.includes(normalizedOrigin)) {
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(normalizedOrigin)) {
         callback(null, true);
         return;
       }

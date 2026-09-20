@@ -8,8 +8,6 @@ import { useSEO, generateOrganizationSchema, generateWebPageSchema } from '../..
 import BackToTop from '../../components/BackToTop';
 import HeroSection from '../../components/feature/HeroSection';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 interface Service {
   id: number;
   title: string;

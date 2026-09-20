@@ -3,8 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Header from '../../components/feature/Header';
 import Footer from '../../components/feature/Footer';
 import WhatsAppButton from '../../components/feature/WhatsAppButton';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+import { API_BASE_URL } from '../../utils/api';
 
 interface ApiProduct {
   id: number;

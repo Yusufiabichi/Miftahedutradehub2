@@ -17,7 +17,6 @@ interface Blog {
   created_at: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const DEFAULT_BLOG_IMAGE = 'https://placehold.co/1200x630?text=Miftah+Edu-Trade+Hub';
 const BLOG_CATEGORIES = [
   'Company News',

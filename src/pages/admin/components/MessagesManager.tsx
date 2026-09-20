@@ -12,8 +12,6 @@ interface Message {
   created_at: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 export default function MessagesManager() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
