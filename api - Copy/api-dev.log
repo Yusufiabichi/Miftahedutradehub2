@@ -1,0 +1,18 @@
+
+> miftah-api@1.0.0 dev
+> node --watch src/server.js
+
+[MySQL] Connected successfully
+[Server] Listening on http://localhost:5000
+Restarting 'src/server.js'
+[MySQL] Connected successfully
+[Server] Listening on http://localhost:5000
+Restarting 'src/server.js'
+[MySQL] Connected successfully
+[Server] Listening on http://localhost:5000
+Restarting 'src/server.js'
+[MySQL] Connected successfully
+[Server] Listening on http://localhost:5000
+Restarting 'src/server.js'
+[MySQL] Connected successfully
+[Server] Listening on http://localhost:5000
