@@ -5,6 +5,7 @@ import AutoImport from "unplugin-auto-import/vite";
 
 const base = process.env.BASE_PATH || "/";
 const isPreview = process.env.IS_PREVIEW ? true : false;
+const apiProxyTarget = process.env.API_PROXY_TARGET || "http://localhost:4000";
 // https://vite.dev/config/
 export default defineConfig({
   define: {
@@ -80,11 +81,11 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: apiProxyTarget,
         changeOrigin: true,
       },
       "/uploads": {
-        target: "http://localhost:5000",
+        target: apiProxyTarget,
         changeOrigin: true,
       },
     },
