@@ -1,3 +1,5 @@
+-- This is a SQL script that creates a database named `qvyddfwn_miftah_db` and sets up several tables for managing products, blogs, messages, service enquiries, and product inquiries. It also includes an admin user and some sample data for testing purposes.
+
 CREATE DATABASE IF NOT EXISTS qvyddfwn_miftah_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE qvyddfwn_miftah_db;
 
