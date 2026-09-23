@@ -41,6 +41,8 @@ export default function ProductsManager() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState('');
 
   const categories = ['all', 'Trucks', 'Tippers', 'Tractors', 'Electric Bikes', 'Phones'];
 
@@ -148,6 +150,9 @@ export default function ProductsManager() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSaving) return;
+
+    setIsSaving(true);
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const category = formData.get('category') as string;
@@ -174,12 +179,14 @@ export default function ProductsManager() {
         image = images[0] || '';
       } catch (error) {
         alert(error instanceof Error ? error.message : 'Unable to upload selected image');
+        setIsSaving(false);
         return;
       }
     }
 
     if (!name || !category || !description) {
       alert('Please fill in all required fields');
+      setIsSaving(false);
       return;
     }
 
@@ -225,12 +232,15 @@ export default function ProductsManager() {
     } catch (error) {
       console.error('Error saving product:', error);
       alert(error instanceof Error ? error.message : 'Failed to save product');
+      setIsSaving(false);
       return;
     }
 
+    setSaveSuccess(isEditing ? 'Product updated successfully.' : 'Product added successfully.');
     setShowAddModal(false);
     setEditingProduct(null);
     setImagePreviews([]);
+    setIsSaving(false);
   };
 
   const filteredProducts = filterCategory === 'all' 
@@ -239,6 +249,22 @@ export default function ProductsManager() {
 
   return (
     <div>
+      {saveSuccess && (
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800" role="status">
+          <span className="flex items-center gap-2">
+            <i className="ri-checkbox-circle-line text-xl"></i>
+            {saveSuccess}
+          </span>
+          <button
+            type="button"
+            onClick={() => setSaveSuccess('')}
+            className="text-green-700 hover:text-green-900"
+            aria-label="Dismiss success message"
+          >
+            <i className="ri-close-line text-lg"></i>
+          </button>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-blue-900">Manage Products</h2>
         <button
@@ -466,19 +492,29 @@ export default function ProductsManager() {
                 <button
                   type="button"
                   onClick={() => {
+                    if (isSaving) return;
                     setShowAddModal(false);
                     setEditingProduct(null);
                     setImagePreviews([]);
                   }}
-                  className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap cursor-pointer"
+                  disabled={isSaving}
+                  className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors whitespace-nowrap cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer"
+                  disabled={isSaving}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all whitespace-nowrap cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {editingProduct ? 'Update Product' : 'Add Product'}
+                  {isSaving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <i className="ri-loader-4-line animate-spin"></i>
+                      {editingProduct ? 'Updating...' : 'Adding...'}
+                    </span>
+                  ) : (
+                    editingProduct ? 'Update Product' : 'Add Product'
+                  )}
                 </button>
               </div>
             </form>
